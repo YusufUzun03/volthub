@@ -157,7 +157,7 @@ body::before {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-4); border-radius: var(--r-md);
   font-size: var(--text-sm); font-weight: 600; font-family: var(--font);
-  cursor: pointer; border: none; transition: all var(--dur-base) var(--ease);
+  cursor: pointer; border: none; transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease);
   white-space: nowrap; text-decoration: none;
 }
 .btn:active { transform: scale(.97) }
@@ -188,7 +188,7 @@ body::before {
   width: 100%; padding: 10px var(--sp-3); background: var(--surface-2);
   border: 1px solid var(--border-2); border-radius: var(--r-md);
   color: var(--tx-primary); font-size: var(--text-sm); font-family: var(--font);
-  outline: none; transition: all var(--dur-base) var(--ease);
+  outline: none; transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease);
 }
 .input:focus { border-color: var(--brand-500); box-shadow: 0 0 0 3px rgba(99,102,241,.12) }
 .input::placeholder { color: var(--tx-tertiary) }
@@ -207,7 +207,7 @@ select.input option { background: var(--n-850) }
 /* ── CARD ── */
 .card {
   background: var(--surface-1); border: 1px solid var(--border-1);
-  border-radius: var(--r-xl); transition: all var(--dur-base) var(--ease);
+  border-radius: var(--r-xl); transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease);
 }
 .card-md { padding: var(--sp-5) }
 .card-lg { padding: var(--sp-6) }
@@ -249,7 +249,7 @@ select.input option { background: var(--n-850) }
   display: flex; align-items: center; gap: var(--sp-2);
   box-shadow: var(--shadow-3);
   transform: translateY(70px) scale(.95); opacity: 0;
-  transition: all var(--dur-slow) var(--ease-spring);
+  transition: transform var(--dur-slow) var(--ease-spring), opacity var(--dur-slow) var(--ease-spring);
   max-width: 300px;
 }
 .toast.show { transform: translateY(0) scale(1); opacity: 1 }
@@ -273,7 +273,7 @@ select.input option { background: var(--n-850) }
   border-radius: var(--r-sm); width: 28px; height: 28px;
   cursor: pointer; font-size: 12px;
   display: flex; align-items: center; justify-content: center;
-  color: var(--tx-secondary); transition: all var(--dur-fast) var(--ease);
+  color: var(--tx-secondary); transition: transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 .modal-close:hover { background: var(--surface-3); color: var(--tx-primary) }
 
@@ -309,7 +309,7 @@ nav {
   padding: 6px 14px; border-radius: 9px;
   font-size: var(--text-sm); font-weight: 600;
   color: var(--tx-secondary); cursor: pointer;
-  transition: all var(--dur-base) var(--ease); border: none;
+  transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease); border: none;
   background: transparent; font-family: var(--font);
 }
 .nav-pill:hover { color: var(--tx-primary); background: var(--surface-2) }
@@ -320,7 +320,7 @@ nav {
   display: flex; align-items: center; gap: var(--sp-2);
   background: var(--surface-2); border: 1px solid var(--border-2);
   border-radius: var(--r-md); padding: 6px 12px; width: 200px;
-  transition: all var(--dur-base) var(--ease);
+  transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease);
 }
 .nav-search:focus-within {
   border-color: var(--brand-500); box-shadow: 0 0 0 3px rgba(99,102,241,.1);
@@ -355,7 +355,7 @@ nav {
   display: flex; align-items: center; gap: var(--sp-2);
   padding: 7px var(--sp-3); border-radius: var(--r-md);
   font-size: var(--text-sm); font-weight: 500; color: var(--tx-secondary);
-  cursor: pointer; transition: all var(--dur-fast) var(--ease);
+  cursor: pointer; transition: transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
   position: relative; border: 1px solid transparent;
 }
 .sb-item:hover { background: var(--surface-2); color: var(--tx-primary) }
@@ -441,7 +441,7 @@ nav {
   font-size: var(--text-xs); font-weight: 700;
   border: 1px solid var(--border-1); background: var(--surface-1);
   color: var(--tx-secondary); cursor: pointer;
-  transition: all var(--dur-base) var(--ease);
+  transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease);
 }
 .fchip:hover { border-color: var(--border-3); color: var(--tx-primary) }
 .fchip.active { background: var(--amber-s); border-color: rgba(99,102,241,.3); color: var(--brand-500) }
@@ -458,10 +458,10 @@ nav {
 .rcard {
   background: var(--surface-1); border: 1px solid var(--border-1);
   border-radius: var(--r-xl); padding: var(--sp-5);
-  transition: all var(--dur-base) var(--ease);
+  transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease);
   display: flex; flex-direction: column; position: relative; overflow: hidden;
-  animation: cardIn var(--dur-slow) var(--ease) both;
 }
+.rcard.anim-in{ animation: cardIn var(--dur-slow) var(--ease) both; }
 @keyframes cardIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .rcard:hover {
   border-color: var(--border-3); transform: translateY(-2px);
@@ -495,7 +495,7 @@ nav {
   padding: var(--sp-4) var(--sp-5);
   background: var(--surface-1); border: 1px solid var(--border-1);
   border-radius: var(--r-lg); margin-bottom: var(--sp-2);
-  cursor: pointer; transition: all var(--dur-base) var(--ease);
+  cursor: pointer; transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease);
 }
 .dcard:hover { border-color: var(--border-3); background: var(--surface-2); transform: translateX(2px) }
 .dcard-icon { width: 42px; height: 42px; border-radius: var(--r-md); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 19px }
@@ -534,7 +534,7 @@ nav {
 .dropzone {
   border: 2px dashed var(--border-3); border-radius: var(--r-lg);
   padding: var(--sp-8); text-align: center; cursor: pointer;
-  transition: all var(--dur-base) var(--ease); background: var(--surface-1);
+  transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease); background: var(--surface-1);
   margin-bottom: var(--sp-4);
 }
 .dropzone:hover, .dropzone.drag {
@@ -612,7 +612,7 @@ nav {
 .auth-tab {
   flex: 1; padding: 9px; border-radius: var(--r-md); text-align: center;
   font-size: var(--text-sm); font-weight: 600; cursor: pointer;
-  transition: all var(--dur-base) var(--ease); color: var(--tx-secondary);
+  transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease); color: var(--tx-secondary);
 }
 .auth-tab.active { background: var(--surface-4); color: var(--tx-primary) }
 .auth-err {
@@ -671,7 +671,7 @@ nav {
 .tool-card {
   background: linear-gradient(160deg, var(--surface-2), var(--surface-1));
   border: 1px solid var(--border-1); border-radius: var(--r-2xl);
-  padding: var(--sp-6); transition: all var(--dur-base) var(--ease);
+  padding: var(--sp-6); transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease);
   position: relative; overflow: hidden;
 }
 .tool-card::before {
@@ -724,7 +724,7 @@ nav {
   font-size: var(--text-xs); font-weight: 700; cursor: pointer;
   background: var(--surface-2); border: 1px solid var(--border-2);
   color: var(--tx-secondary); font-family: var(--font);
-  transition: all var(--dur-fast) var(--ease);
+  transition: transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 .rc-bc-btn:hover { border-color: var(--border-3); color: var(--tx-primary) }
 .rc-bc-btn.active { background: var(--amber-s); border-color: var(--border-accent); color: var(--brand-500) }
@@ -743,7 +743,7 @@ nav {
   display: flex; align-items: flex-start; gap: var(--sp-3);
   background: var(--surface-1); border: 1px solid var(--border-1);
   border-radius: var(--r-lg); padding: var(--sp-4);
-  text-decoration: none; color: inherit; transition: all var(--dur-base) var(--ease);
+  text-decoration: none; color: inherit; transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease);
 }
 .link-card:hover { border-color: var(--border-3); background: var(--surface-2); transform: translateY(-2px); box-shadow: var(--shadow-2) }
 .link-ico { width: 40px; height: 40px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 20px; background: var(--surface-3); flex-shrink: 0 }
@@ -757,7 +757,7 @@ nav {
   display: flex; align-items: center; gap: var(--sp-4);
   padding: var(--sp-3) var(--sp-5);
   background: var(--surface-1); border: 1px solid var(--border-1); border-radius: var(--r-lg);
-  transition: all var(--dur-base) var(--ease);
+  transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease), color var(--dur-base) var(--ease), width var(--dur-base) var(--ease);
 }
 .lb-row:hover { border-color: var(--border-2); background: var(--surface-2) }
 .lb-rank { font-size: var(--text-lg); font-weight: 900; width: 36px; text-align: center; color: var(--tx-tertiary); flex-shrink: 0 }
@@ -869,9 +869,18 @@ nav {
 .av-a4{background:linear-gradient(135deg,#f59e0b,#f97316)!important}
 .av-a5{background:linear-gradient(135deg,#ec4899,#f43f5e)!important}
 .av-pick{display:flex;gap:var(--sp-3);flex-wrap:wrap;align-items:center}
-.av-opt{cursor:pointer;border:2px solid transparent;border-radius:var(--r-full);padding:2px;transition:all var(--dur-fast) var(--ease)}
+.av-opt{cursor:pointer;border:2px solid transparent;border-radius:var(--r-full);padding:2px;transition:transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease)}
 .av-opt:hover{border-color:var(--border-3)}
 .av-opt.sel{border-color:var(--brand-500)}
+/* ── HAREKET CİLASI ── */
+.rcard-shine{display:none}
+.overlay.show{animation:ovIn var(--dur-base) var(--ease)}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+.overlay.show .modal{animation:modalIn var(--dur-base) var(--ease-spring)}
+@keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a0a17">
@@ -1516,7 +1525,7 @@ function cardHTML(f,saves,i=0){
   const saved=saves.includes(f.id), own=f.uploaderId===SESSION.userId;
   const liked=(f.likes||[]).includes(SESSION.userId);
   const d=new Date(f.createdAt), dateStr=`${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
-  return `<div class="rcard" style="animation-delay:${i*40}ms" data-id="${f.id}" onclick="openPreview(${f.id})">
+  return `<div class="${ANIM_FIRST?'rcard anim-in':'rcard'}" style="${ANIM_FIRST?`animation-delay:${i*40}ms`:''}" data-id="${f.id}" onclick="openPreview(${f.id})">
     <div class="rcard-shine"></div>
     <div class="rcard-type"><span class="tag ${cfg.cls}">${cfg.label}</span></div>
     <div class="rcard-title">${esc(f.title)}</div>
@@ -1562,11 +1571,11 @@ const sortFn=(a,b)=>(SORTERS[curSort]||SORTERS.new)(a,b);
 function setSort(s){ curSort=s; refreshAll(); }
 function clearDersFilter(){ curDers=null; clearSbActive(); document.getElementById('sf-hepsi').classList.add('active'); refreshAll(); }
 
-let FIRST_LOAD=true;
+let FIRST_LOAD=true, ANIM_FIRST=true;
 const SKEL_HTML='<div class="skel-grid">'+Array(6).fill('<div class="skel"></div>').join('')+'</div>';
-async function refreshAll(){
+async function refreshAll(skipLoad){
   if(FIRST_LOAD){const _mg=document.getElementById('mainGrid'); if(_mg)_mg.innerHTML=SKEL_HTML;}
-  await loadAllData();
+  if(!skipLoad) await loadAllData();
   FIRST_LOAD=false;
   const all=await dbAll('files'), users=await dbAll('users');
   document.getElementById('statFiles').textContent=all.length;
@@ -1626,6 +1635,7 @@ async function refreshAll(){
   document.getElementById('myDls').textContent=(u&&u.downloads)||0;
   await renderCards('myGrid',myFiles);
   await renderCards('savedGrid',savedFiles);
+  ANIM_FIRST=false;
 }
 
 // ═══════════════════════════════════════════════════
@@ -1780,21 +1790,28 @@ async function handleSearch(q){
 // SAVE / DOWNLOAD / DELETE
 async function toggleSave(e,id){
   e.stopPropagation();
-  const isSaved=(STATE.myProfile&&STATE.myProfile.saves||[]).includes(id);
-  if(isSaved) await SB.from('saves').delete().eq('file_id',id).eq('user_id',SESSION.userId);
-  else await SB.from('saves').insert({file_id:id,user_id:SESSION.userId});
+  const mp=STATE.myProfile; if(!mp)return;
+  const isSaved=(mp.saves||[]).includes(id);
+  mp.saves = isSaved ? mp.saves.filter(x=>x!==id) : [...(mp.saves||[]),id];
+  await refreshAll(true);
   toast(isSaved?'🔖 Kaydedilenlerden kaldırıldı':'✅ Kaydedildi!');
-  await refreshAll();
+  const {error} = isSaved
+    ? await SB.from('saves').delete().eq('file_id',id).eq('user_id',SESSION.userId)
+    : await SB.from('saves').insert({file_id:id,user_id:SESSION.userId});
+  if(error){ mp.saves = isSaved ? [...mp.saves,id] : mp.saves.filter(x=>x!==id); await refreshAll(true); toast('❌ İşlem başarısız.'); }
 }
 
 async function toggleLike(e,id){
   e.stopPropagation();
   const f=STATE.files.find(x=>x.id===id); if(!f)return;
   const isLiked=f.likes.includes(SESSION.userId);
-  if(isLiked) await SB.from('likes').delete().eq('file_id',id).eq('user_id',SESSION.userId);
-  else await SB.from('likes').insert({file_id:id,user_id:SESSION.userId});
+  f.likes = isLiked ? f.likes.filter(u=>u!==SESSION.userId) : [...f.likes,SESSION.userId];
+  await refreshAll(true);
   toast(isLiked?'👍 Beğeni geri alındı':'👍 Beğendin!');
-  await refreshAll();
+  const {error} = isLiked
+    ? await SB.from('likes').delete().eq('file_id',id).eq('user_id',SESSION.userId)
+    : await SB.from('likes').insert({file_id:id,user_id:SESSION.userId});
+  if(error){ f.likes = isLiked ? [...f.likes,SESSION.userId] : f.likes.filter(u=>u!==SESSION.userId); await refreshAll(true); toast('❌ İşlem başarısız.'); }
 }
 
 async function downloadFile(e,id){
