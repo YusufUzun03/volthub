@@ -890,6 +890,16 @@ nav {
 .share-row:hover{background:var(--surface-2)}
 .share-row.sel{background:rgba(99,102,241,.1)}
 .share-check{margin-left:auto;color:var(--brand-500);font-weight:800}
+.legal h4{color:var(--brand-500);font-size:var(--text-base);margin:var(--sp-4) 0 4px}
+.legal p,.legal li{font-size:var(--text-sm);color:var(--tx-secondary);line-height:1.7}
+.legal ul{margin:4px 0 4px 18px;padding:0}
+.legal{max-height:55vh;overflow-y:auto;padding-right:6px}
+.agree{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--tx-secondary);margin:var(--sp-3) 0;line-height:1.5}
+.agree input{margin-top:2px;flex-shrink:0;accent-color:var(--brand-500)}
+.agree a{color:var(--brand-500);cursor:pointer;text-decoration:underline}
+.site-foot{text-align:center;padding:var(--sp-6) 16px var(--sp-8);margin-top:var(--sp-8);border-top:1px solid var(--border-1);font-size:12px;color:var(--tx-tertiary)}
+.site-foot a{color:var(--tx-secondary);cursor:pointer;text-decoration:none;margin:0 2px}
+.site-foot a:hover{color:var(--brand-500);text-decoration:underline}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a0a17">
@@ -984,7 +994,8 @@ nav {
           </select>
         </div>
         <div class="auth-err" id="rErr"></div>
-        <button class="btn btn-brand btn-lg" style="width:100%;margin-top:8px" onclick="doRegister()">Kayıt Ol →</button>
+        <label class="agree"><input type="checkbox" id="rAgree"> <span><a onclick="openRules()">Kullanım Koşulları ve Gizlilik Politikası</a>'nı okudum ve kabul ediyorum.</span></label>
+          <button class="btn btn-brand btn-lg" style="width:100%;margin-top:8px" onclick="doRegister()">Kayıt Ol →</button>
       </div>
     </div>
   </div>
@@ -1197,6 +1208,10 @@ nav {
     <div id="adminFiles"></div>
   </div>
 
+  <footer class="site-foot">
+    © 2026 VoltHub · <a onclick="openRules()">Kullanım Koşulları</a> · <a onclick="openRules()">Gizlilik</a> · <a onclick="openRules()">İletişim</a>
+  </footer>
+
 </main>
 </div>
 </div>
@@ -1272,7 +1287,41 @@ nav {
       <div class="up-bar-track"><div class="up-bar-fill" id="upBar"></div></div>
     </div>
 
+    <div style="font-size:var(--text-xs);color:var(--tx-tertiary);margin:var(--sp-2) 0 var(--sp-3);line-height:1.5">⚠️ Sadece kendi ürettiğin veya paylaşma hakkına sahip olduğun materyali yükle. Telifli kitap/yayın ve izinsiz sınav belgeleri yasaktır.</div>
     <button class="btn btn-brand btn-lg" id="upBtn" style="width:100%" onclick="doUpload()">⬆ Yükle</button>
+  </div>
+</div>
+
+<!-- ═══════════ KURALLAR MODAL ═══════════ -->
+<div class="overlay" id="rulesOverlay">
+  <div class="modal" style="max-width:640px;text-align:left">
+    <button class="modal-close" onclick="closeRules()">✕</button>
+    <div style="font-size:var(--text-xl);font-weight:900;margin-bottom:4px">Kullanım Koşulları &amp; Gizlilik</div>
+    <div style="font-size:var(--text-xs);color:var(--tx-tertiary);margin-bottom:var(--sp-3)">Son güncelleme: Haziran 2026</div>
+    <div class="legal">
+      <h4>1. Hizmet</h4>
+      <p>VoltHub, elektrik-elektronik mühendisliği öğrencilerinin ders notu, geçmiş sınav ve kaynak paylaştığı ücretsiz, kâr amacı gütmeyen bir platformdur. Hizmet "olduğu gibi" sunulur; kesintisizlik veya hatasızlık garantisi verilmez.</p>
+      <h4>2. Hesap</h4>
+      <p>Kayıt olurken doğru bilgi vermeyi kabul edersin. Hesabının güvenliğinden ve hesabınla yapılan işlemlerden sen sorumlusun.</p>
+      <h4>3. İçerik Kuralları</h4>
+      <p>Yalnızca <b>kendi ürettiğin veya paylaşma hakkına sahip olduğun</b> materyali yükleyebilirsin. Aşağıdakiler yasaktır:</p>
+      <ul>
+        <li>Telifli ders kitapları, yayınlar ve izinsiz çoğaltılmış materyaller</li>
+        <li>İzin alınmamış sınav kâğıtları veya kurum içi gizli belgeler</li>
+        <li>Hakaret, nefret söylemi, müstehcen veya yasadışı içerik</li>
+        <li>Başkalarının kişisel verilerini içeren belgeler</li>
+      </ul>
+      <h4>4. Sorumluluk</h4>
+      <p>Yüklediğin içerikten <b>tamamen sen sorumlusun.</b> VoltHub içeriği yalnızca barındırır; üretmez, denetlemez ve doğruluğunu/yasallığını garanti etmez. Platformun kullanımından doğabilecek zararlardan, yürürlükteki yasaların izin verdiği ölçüde, VoltHub sorumlu tutulamaz.</p>
+      <h4>5. İçerik Kaldırma (Uyar-Kaldır)</h4>
+      <p>VoltHub, uygun görmediği veya kendisine bildirilen içeriği önceden haber vermeksizin kaldırabilir, hesapları askıya alabilir. Bir içeriğin haklarını ihlal ettiğini düşünüyorsan aşağıdaki iletişim adresinden bildir; içerik en kısa sürede incelenip kaldırılır.</p>
+      <h4>6. Kişisel Veriler (KVKK Aydınlatma)</h4>
+      <p>Veri sorumlusu olarak şu verileri işleriz: ad-soyad, e-posta, sınıf bilgisi, yüklediğin dosyalar ve platform içi etkileşimlerin (beğeni, yorum, puan). Amaç; hesabını oluşturmak ve platformu işletmektir. Veriler güvenli sunucularda (Supabase) saklanır, pazarlama amacıyla üçüncü kişilerle paylaşılmaz.</p>
+      <p>KVKK m.11 kapsamında verilerine erişme, düzeltme ve <b>silinmesini</b> talep etme hakkına sahipsin. Hesap/veri silme talebin için iletişim adresine yazman yeterlidir. Oturum ve tercihlerin için tarayıcı yerel depolaması kullanılır.</p>
+      <h4>7. İletişim &amp; Şikayet</h4>
+      <p>Sorular, telif/kaldırma talepleri ve veri silme istekleri için: <b>yuzun2005@gmail.com</b></p>
+    </div>
+    <button class="btn btn-brand" style="width:100%;margin-top:var(--sp-4)" onclick="closeRules()">Anladım</button>
   </div>
 </div>
 
@@ -1408,6 +1457,7 @@ async function doRegister(){
   err.classList.remove('show');
   if(!name||!email||!pass){showErr(err,'Tüm alanları doldurun.');return;}
   if(pass.length<6){showErr(err,'Şifre en az 6 karakter.');return;}
+  if(!document.getElementById('rAgree').checked){showErr(err,'Devam etmek için koşulları kabul etmelisin.');return;}
   const {data,error}=await SB.auth.signUp({email,password:pass,options:{data:{name,year}}});
   if(error){showErr(err,error.message);return;}
   if(data.session){ await afterLogin(); }
@@ -1960,6 +2010,8 @@ let selFile=null;
 let UP_VIS='public'; const UP_SHARE=new Set();
 
 function openUpload(){ document.getElementById('uploadOverlay').classList.add('show') }
+function openRules(){ document.getElementById('rulesOverlay').classList.add('show'); }
+function closeRules(){ document.getElementById('rulesOverlay').classList.remove('show'); }
 function closeUpload(){
   document.getElementById('uploadOverlay').classList.remove('show');
   clearFile();
@@ -2061,7 +2113,8 @@ function toast(msg){
 // OVERLAY CLOSE
 document.getElementById('uploadOverlay').addEventListener('click',function(e){if(e.target===this)closeUpload();});
 document.getElementById('previewOverlay').addEventListener('click',function(e){if(e.target===this)closePreview();});
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeUpload(); closePreview(); } });
+document.getElementById('rulesOverlay').addEventListener('click',function(e){if(e.target===this)closeRules();});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeUpload(); closePreview(); closeRules(); } });
 
 // ═══════════════════════════════════════════════════
 // TOOLS — INTERACTIVE CALCULATORS
