@@ -1016,6 +1016,7 @@ nav {
     <button class="nav-pill" onclick="goTo('araclar',this)">Araçlar</button>
     <button class="nav-pill" onclick="goTo('kaynaklar',this)">Kaynaklar</button>
     <button class="nav-pill" onclick="goTo('topluluk',this)">Topluluk</button>
+    <button class="nav-pill" onclick="goTo('istekler',this)">İstekler</button>
     <button class="nav-pill" onclick="goTo('profil',this)">Profilim</button>
     <button class="nav-pill" id="adminPill" style="display:none" onclick="goTo('admin',this)">🛡️ Yönetim</button>
   </div>
@@ -1188,6 +1189,25 @@ nav {
     <div class="lb-list" id="lbList"></div>
   </div>
 
+  <!-- İSTEKLER -->
+  <div class="page" id="page-istekler">
+    <div class="hero-banner" style="padding:var(--sp-8) var(--sp-10)">
+      <div class="hero-glyph">📥</div>
+      <div class="hero-eyebrow"><span class="hero-eyebrow-dot"></span>Topluluk Talepleri</div>
+      <div class="hero-title">Kaynak <em>İste</em></div>
+      <div class="hero-subtitle">Aradığın ama bulamadığın bir kaynak mı var? İste, biri yüklesin. Sen de başkalarının isteğini karşıla.</div>
+    </div>
+    <div class="card card-md" style="margin-bottom:var(--sp-6)">
+      <div class="tool-row">
+        <div class="form-field" style="flex:0 0 190px"><label class="form-label">Ders (opsiyonel)</label><select class="input" id="reqDers"><option value="">Genel</option></select></div>
+        <div class="form-field" style="flex:1"><label class="form-label">Ne arıyorsun?</label><input class="input" id="reqText" placeholder="Ör: EE211 2023 vize soruları" maxlength="200" onkeydown="if(event.key==='Enter')createRequest()"></div>
+      </div>
+      <button class="btn btn-brand" onclick="createRequest()">İstek Oluştur</button>
+    </div>
+    <div class="sec-head"><div class="sec-title">Açık İstekler</div></div>
+    <div id="reqList"></div>
+  </div>
+
   <!-- ADMIN -->
   <div class="page" id="page-admin">
     <div class="hero-banner" style="padding:var(--sp-8) var(--sp-10)">
@@ -1223,6 +1243,10 @@ nav {
     <div style="font-size:var(--text-xl);font-weight:900;margin-bottom:4px">Dosya Yükle</div>
     <div style="font-size:var(--text-sm);color:var(--tx-secondary);margin-bottom:var(--sp-5)">Ders notu, sınav, kitap özeti veya formül listesi paylaş.</div>
 
+    <div class="vis-seg" style="margin-bottom:var(--sp-4)">
+      <button type="button" class="vis-opt active" data-kind="file" onclick="setUpKind('file')">📄 Dosya</button>
+      <button type="button" class="vis-opt" data-kind="link" onclick="setUpKind('link')">🔗 Bağlantı</button>
+    </div>
     <div class="dropzone" id="dropZone" onclick="document.getElementById('fileInput').click()"
       ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
       <div class="dropzone-icon">📂</div>
@@ -1232,6 +1256,12 @@ nav {
     <input type="file" id="fileInput" style="display:none"
       accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.txt"
       onchange="fileSelected(this.files[0])">
+
+    <div class="form-field" id="linkWrap" style="display:none">
+      <label class="form-label">Bağlantı (URL)</label>
+      <input class="input" id="upUrl" type="url" placeholder="https://...">
+      <div style="font-size:var(--text-xs);color:var(--tx-tertiary);margin-top:4px">YouTube dersi, makale, simülasyon, Drive linki vb.</div>
+    </div>
 
     <div class="file-chip" id="filePreview" style="display:none">
       <div class="file-chip-icon" id="fpIcon">📄</div>
@@ -1252,12 +1282,21 @@ nav {
     </div>
     <div class="form-field">
       <label class="form-label">Tür</label>
-      <select class="input" id="upType">
+      <select class="input" id="upType" onchange="onTypeChange()">
         <option value="not">Ders Notu</option>
         <option value="sinav">Geçmiş Sınav</option>
         <option value="kitap">Kitap / Özet</option>
         <option value="formul">Formül Listesi</option>
         <option value="diger">Diğer</option>
+      </select>
+    </div>
+    <div class="form-field" id="subtypeWrap" style="display:none">
+      <label class="form-label">Sınav Alt Türü</label>
+      <select class="input" id="upSubtype">
+        <option value="">Genel / Geçmiş Sınav</option>
+        <option value="vize">Vize Örnek Soru</option>
+        <option value="final">Final Örnek Soru</option>
+        <option value="quiz">Quiz / Ara Sınav</option>
       </select>
     </div>
     <div class="form-field">
@@ -1347,6 +1386,9 @@ const TYPE_CONFIG = {
 
 // ═══════════════════════════════════════════════════
 // DATA — EEE
+const SUBTYPE_LABEL={vize:'📋 Vize',final:'📋 Final',quiz:'📋 Quiz'};
+function onTypeChange(){ const w=document.getElementById('subtypeWrap'); if(w)w.style.display=document.getElementById('upType').value==='sinav'?'':'none'; }
+
 const DERSLER = [
   {id:'ee102',    name:'Elektrik ve Elektronik Mühendisliğine Giriş', icon:'⚡', color:'rgba(99,102,241,.15)', desc:'Mesleğe giriş; temel kavramlar ve laboratuvar', donem:'1. Yarıyıl'},
   {id:'ee211',    name:'Elektrik Devreleri',                          icon:'🔌', color:'rgba(99,102,241,.18)', desc:'KVL, KCL, Thevenin, Norton, süperpozisyon',    donem:'3. Yarıyıl'},
@@ -1416,7 +1458,7 @@ async function loadAllData(){
     id:r.id, title:r.title, desc:r.description, type:r.type, ders:r.ders,
     uploaderId:r.uploader_id, uploaderName:r.uploader_name,
     createdAt:new Date(r.created_at).getTime(),
-    fileName:r.file_name, fileSize:r.size, downloads:r.downloads||0, file_path:r.file_path, tags:r.tags||[], visibility:r.visibility||'public',
+    fileName:r.file_name, fileSize:r.size, downloads:r.downloads||0, file_path:r.file_path, tags:r.tags||[], visibility:r.visibility||'public', url:r.url, kind:r.kind||'file', subtype:r.subtype,
     likes:likeBy[r.id]||[], ratings:rateBy[r.id]||[], comments:comBy[r.id]||[]
   }));
   STATE.profiles = profiles.map(p=>({ id:p.id, name:p.name, year:p.year, downloads:p.downloads||0, is_admin:p.is_admin, banned:p.banned, saves:saveByUser[p.id]||[] }));
@@ -1599,12 +1641,12 @@ function cardHTML(f,saves,i=0){
   const d=new Date(f.createdAt), dateStr=`${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
   return `<div class="${ANIM_FIRST?'rcard anim-in':'rcard'}" style="${ANIM_FIRST?`animation-delay:${i*40}ms`:''}" data-id="${f.id}" onclick="openPreview(${f.id})">
     <div class="rcard-shine"></div>
-    <div class="rcard-type"><span class="tag ${cfg.cls}">${cfg.label}</span></div>
+    <div class="rcard-type"><span class="tag ${cfg.cls}">${cfg.label}</span>${f.subtype&&SUBTYPE_LABEL[f.subtype]?` <span class="tag tag-red">${SUBTYPE_LABEL[f.subtype]}</span>`:''}</div>
     <div class="rcard-title">${esc(f.title)}</div>
     <div class="rcard-desc">${esc(f.desc)||'Açıklama eklenmemiş.'}</div>
     <div class="rcard-tags">
       <span class="tag tag-neutral">${esc(getDersName(f.ders))}</span>
-      <span class="tag tag-neutral">${fileIcon(f.fileName)} ${(f.fileName||'').split('.').pop().toUpperCase()}</span>
+      <span class="tag tag-neutral">${f.kind==='link'?'🔗 '+esc(f.file_name||'bağlantı'):fileIcon(f.fileName)+' '+(f.fileName||'').split('.').pop().toUpperCase()}</span>
       ${f.visibility==='private'?'<span class="tag tag-neutral">🔒 Özel</span>':f.visibility==='shared'?'<span class="tag tag-neutral">👥 Paylaşılan</span>':''}
       ${(f.tags||[]).slice(0,3).map(tg=>`<span class="tag tag-neutral">#${esc(tg)}</span>`).join('')}
     </div>
@@ -1612,7 +1654,7 @@ function cardHTML(f,saves,i=0){
       <span title="İndirme">⬇️ ${f.downloads||0}</span>
       <span title="Beğeni">👍 ${(f.likes||[]).length}</span>
       ${ratingsOf(f).length?`<span title="Puan">⭐ ${avgRating(f).toFixed(1)}</span>`:''}
-      <span title="Boyut">📦 ${fmtSize(f.fileSize||0)}</span>
+      <span title="Boyut">📦 ${f.kind==='link'?'Link':fmtSize(f.fileSize||0)}</span>
     </div>
     <div class="rcard-divider"></div>
     <div class="rcard-footer">
@@ -1763,7 +1805,7 @@ async function setAvatar(a){
 
 // ═══════════════════════════════════════════════════
 // NAVIGATION
-const PAGE_INDEX={anasayfa:0,dersler:1,araclar:2,kaynaklar:3,topluluk:4,profil:5,admin:6};
+const PAGE_INDEX={anasayfa:0,dersler:1,araclar:2,kaynaklar:3,topluluk:4,istekler:5,profil:6,admin:7};
 function goTo(page,navEl){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-pill').forEach(l=>l.classList.remove('active'));
@@ -1778,6 +1820,7 @@ function goTo(page,navEl){
   if(page==='profil')refreshAll();
   if(page==='topluluk')buildLeaderboard();
   if(page==='admin')buildAdmin();
+  if(page==='istekler')buildRequests();
 }
 
 // ═══════════════════════════════════════════════════
@@ -1834,7 +1877,7 @@ async function handleSearch(q){
       ||(f.ders||'').toLowerCase().includes(ql)
       ||(f.type||'').toLowerCase().includes(ql)||tl.includes(ql)
       ||(f.fileName||'').toLowerCase().includes(ql)||ext.includes(ql)
-      ||(f.tags||[]).some(tg=>tg.toLowerCase().includes(ql));
+      ||(f.tags||[]).some(tg=>tg.toLowerCase().includes(ql))||(f.subtype||'').toLowerCase().includes(ql);
   });
   if(!dersMatch.length&&!typeMatch.length&&!res.length){
     sr.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">"${q}" için sonuç yok</div><div class="empty-desc">Ders adı, tür, dosya tipi veya anahtar kelime dene.</div></div>`;
@@ -1890,7 +1933,13 @@ async function toggleLike(e,id){
 async function downloadFile(e,id){
   if(e)e.stopPropagation();
   const f=STATE.files.find(x=>x.id===id);
-  if(!f||!f.file_path){toast('❌ Dosya bulunamadı.');return;}
+  if(!f){toast('❌ Bulunamadı.');return;}
+  if(f.kind==='link'){
+    window.open(f.url,'_blank','noopener');
+    try{ await SB.rpc('bump_download',{fid:id}); }catch(_){}
+    toast('🔗 Bağlantı açıldı'); await refreshAll(); return;
+  }
+  if(!f.file_path){toast('❌ Dosya bulunamadı.');return;}
   try{ await SB.rpc('bump_download',{fid:id}); }catch(_){}
   const url=SB.storage.from('files').getPublicUrl(f.file_path,{download:f.fileName||'dosya'}).data.publicUrl;
   const a=document.createElement('a'); a.href=url; a.download=f.fileName||'dosya'; document.body.appendChild(a); a.click(); a.remove();
@@ -1901,6 +1950,7 @@ async function downloadFile(e,id){
 // ═══════════════════════════════════════════════════
 // PREVIEW MODAL
 let pvUrl=null;
+function ytId(url){ try{ const u=new URL(url); if(u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('/')[0]; if(u.hostname.includes('youtube.com')){ if(u.searchParams.get('v')) return u.searchParams.get('v'); const m=u.pathname.match(/\/(embed|shorts)\/([^/?]+)/); if(m) return m[2]; } }catch(e){} return null; }
 async function openPreview(id){
   const f=await dbGet('files',id);
   if(!f){toast('❌ Dosya bulunamadı.');return;}
@@ -1916,7 +1966,11 @@ async function openPreview(id){
 
   // Build preview frame (Supabase public URL)
   let frame='';
-  if(f.file_path){
+  if(f.kind==='link'){
+    const _yid=ytId(f.url);
+    if(_yid) frame=`<div class="pv-frame"><iframe src="https://www.youtube.com/embed/${_yid}" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>`;
+    else frame=`<div class="pv-frame"><div class="pv-noprev"><div class="pv-noprev-ico">🔗</div>Bu bir harici bağlantı.<br><a href="${f.url}" target="_blank" rel="noopener" style="color:var(--brand-500);word-break:break-all">${esc(f.url)}</a></div></div>`;
+  } else if(f.file_path){
     const url=SB.storage.from('files').getPublicUrl(f.file_path).data.publicUrl;
     if(['png','jpg','jpeg','gif','webp'].includes(ext))
       frame=`<div class="pv-frame"><img src="${url}" alt=""></div>`;
@@ -1932,7 +1986,7 @@ async function openPreview(id){
         <div class="pv-tags">
           <span class="tag ${cfg.cls}">${cfg.label}</span>
           <span class="tag tag-neutral">${esc(getDersName(f.ders))}</span>
-          <span class="tag tag-neutral">${fileIcon(f.fileName)} ${ext.toUpperCase()}</span>
+          <span class="tag tag-neutral">${f.kind==='link'?'🔗 Bağlantı':fileIcon(f.fileName)+' '+ext.toUpperCase()}</span>
         </div>
         <div class="pv-title">${esc(f.title)}</div>
       </div>
@@ -1943,7 +1997,7 @@ async function openPreview(id){
       <span>📅 ${dateStr}</span>
       <span>⬇️ <b>${f.downloads||0}</b> indirme</span>
       <span>👍 <b>${(f.likes||[]).length}</b> beğeni</span>
-      <span>📦 <b>${fmtSize(f.fileSize||0)}</b></span>
+      <span>📦 <b>${f.kind==='link'?'Bağlantı':fmtSize(f.fileSize||0)}</b></span>
     </div>
     <div style="font-size:var(--text-sm);color:var(--tx-secondary);line-height:1.7;margin-bottom:var(--sp-5)">${esc(f.desc)||'Açıklama eklenmemiş.'}</div>
     <div class="rate-box">
@@ -1968,7 +2022,7 @@ async function openPreview(id){
       </div>
     </div>
     <div class="pv-actions">
-      <button class="btn btn-brand" onclick="downloadFile(event,${f.id})">⬇️ İndir</button>
+      <button class="btn btn-brand" onclick="downloadFile(event,${f.id})">${f.kind==='link'?'🔗 Bağlantıyı Aç':'⬇️ İndir'}</button>
       <button class="btn btn-ghost ${liked?'active':''}" onclick="toggleLike(event,${f.id});closePreview()">👍 Beğen</button>
       <button class="btn btn-ghost ${saved?'active':''}" onclick="toggleSave(event,${f.id});closePreview()">🔖 ${saved?'Kaydedildi':'Kaydet'}</button>
       ${own?'':`<button class="btn btn-ghost" onclick="reportFile(${f.id})" title="Şikayet et">🚩 Bildir</button>`}
@@ -2007,7 +2061,7 @@ async function deleteFile(e,id){
 // ═══════════════════════════════════════════════════
 // UPLOAD
 let selFile=null;
-let UP_VIS='public'; const UP_SHARE=new Set();
+let UP_VIS='public'; const UP_SHARE=new Set(); let UP_KIND='file';
 
 function openUpload(){ document.getElementById('uploadOverlay').classList.add('show') }
 function openRules(){ document.getElementById('rulesOverlay').classList.add('show'); }
@@ -2015,8 +2069,8 @@ function closeRules(){ document.getElementById('rulesOverlay').classList.remove(
 function closeUpload(){
   document.getElementById('uploadOverlay').classList.remove('show');
   clearFile();
-  ['upTitle','upDesc','upTags'].forEach(id=>document.getElementById(id).value='');
-  UP_VIS='public'; UP_SHARE.clear(); setVis('public'); const _ss=document.getElementById('shareSearch'); if(_ss)_ss.value='';
+  ['upTitle','upDesc','upTags','upUrl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  UP_VIS='public'; UP_SHARE.clear(); setVis('public'); UP_KIND='file'; setUpKind('file'); const _sw=document.getElementById('subtypeWrap'); if(_sw)_sw.style.display='none'; const _st=document.getElementById('upSubtype'); if(_st)_st.value=''; const _ss=document.getElementById('shareSearch'); if(_ss)_ss.value='';
   document.getElementById('upProg').classList.remove('show');
   document.getElementById('upBtn').disabled=false;
 }
@@ -2045,9 +2099,16 @@ const fmtSize=b=>b<1048576?(b/1024).toFixed(1)+'KB':(b/1048576).toFixed(1)+'MB';
 
 function setVis(v){
   UP_VIS=v;
-  document.querySelectorAll('.vis-opt').forEach(b=>b.classList.toggle('active',b.dataset.vis===v));
+  document.querySelectorAll('.vis-opt[data-vis]').forEach(b=>b.classList.toggle('active',b.dataset.vis===v));
   const w=document.getElementById('sharePickWrap'); if(w)w.style.display=v==='shared'?'':'none';
   if(v==='shared')renderSharePick('');
+}
+function setUpKind(k){
+  UP_KIND=k;
+  document.querySelectorAll('.vis-opt[data-kind]').forEach(b=>b.classList.toggle('active',b.dataset.kind===k));
+  const dz=document.getElementById('dropZone'), fp=document.getElementById('filePreview'), lw=document.getElementById('linkWrap');
+  if(k==='link'){ if(dz)dz.style.display='none'; if(fp)fp.style.display='none'; if(lw)lw.style.display=''; }
+  else { if(lw)lw.style.display='none'; if(selFile){ if(dz)dz.style.display='none'; if(fp)fp.style.display='flex'; } else { if(dz)dz.style.display=''; if(fp)fp.style.display='none'; } }
 }
 function toggleShare(id){ if(UP_SHARE.has(id))UP_SHARE.delete(id); else UP_SHARE.add(id); renderSharePick(document.getElementById('shareSearch').value); }
 function renderSharePick(q){
@@ -2063,10 +2124,29 @@ function renderSharePick(q){
 
 async function doUpload(){
   const title=v('upTitle'), ders=v('upDers'), type=document.getElementById('upType').value, desc=v('upDesc');
-  if(!selFile){toast('❌ Lütfen bir dosya seç.');return;}
+  const subtype = type==='sinav' ? (document.getElementById('upSubtype').value||null) : null;
   if(!title){toast('❌ Başlık gerekli.');return;}
   if(!ders){toast('❌ Ders seçmelisin.');return;}
+  const tags=v('upTags').split(',').map(x=>x.trim()).filter(Boolean).slice(0,8);
   const btn=document.getElementById('upBtn');
+  async function addShares(fid){ if(UP_VIS==='shared' && UP_SHARE.size){ const {error}=await SB.from('file_shares').insert([...UP_SHARE].map(uid=>({file_id:fid,user_id:uid}))); if(error) throw error; } }
+
+  if(UP_KIND==='link'){
+    let url=v('upUrl');
+    if(!url){toast('❌ Bağlantı (URL) gir.');return;}
+    if(!/^https?:\/\//i.test(url)) url='https://'+url;
+    let host=''; try{ host=new URL(url).hostname.replace(/^www\./,''); }catch(e){ toast('❌ Geçerli bir bağlantı gir.'); return; }
+    btn.disabled=true;
+    try{
+      const {data:nf,error:e1}=await SB.from('files').insert({title,description:desc,type,ders,subtype,uploader_id:SESSION.userId,uploader_name:SESSION.name,kind:'link',url,file_name:host,size:0,tags,visibility:UP_VIS}).select('id').single();
+      if(e1) throw e1;
+      await addShares(nf.id);
+    }catch(err){ btn.disabled=false; toast('❌ Hata: '+(err.message||err)); return; }
+    closeUpload(); toast('🎉 Bağlantı paylaşıldı!');
+    goTo('anasayfa',document.querySelector('.nav-pill')); await refreshAll(); return;
+  }
+
+  if(!selFile){toast('❌ Lütfen bir dosya seç.');return;}
   btn.disabled=true;
   document.getElementById('upProg').classList.add('show');
   animBar();
@@ -2075,14 +2155,9 @@ async function doUpload(){
     const path=`${SESSION.userId}/${Date.now()}_${safe}`;
     const {error:upErr}=await SB.storage.from('files').upload(path,selFile,{upsert:false});
     if(upErr) throw upErr;
-    const tags=v('upTags').split(',').map(x=>x.trim()).filter(Boolean).slice(0,8);
-    const {data:newFile,error:insErr}=await SB.from('files').insert({title,description:desc,type,ders,uploader_id:SESSION.userId,uploader_name:SESSION.name,file_path:path,file_name:selFile.name,size:selFile.size,tags,visibility:UP_VIS}).select('id').single();
+    const {data:nf,error:insErr}=await SB.from('files').insert({title,description:desc,type,ders,subtype,uploader_id:SESSION.userId,uploader_name:SESSION.name,kind:'file',file_path:path,file_name:selFile.name,size:selFile.size,tags,visibility:UP_VIS}).select('id').single();
     if(insErr) throw insErr;
-    if(UP_VIS==='shared' && UP_SHARE.size && newFile){
-      const rows=[...UP_SHARE].map(uid=>({file_id:newFile.id,user_id:uid}));
-      const {error:shErr}=await SB.from('file_shares').insert(rows);
-      if(shErr) throw shErr;
-    }
+    await addShares(nf.id);
   }catch(err){
     document.getElementById('upBtn').disabled=false;
     document.getElementById('upProg').classList.remove('show');
@@ -2517,6 +2592,44 @@ async function adminBan(uid,ban){
   if(error){ toast('❌ İşlem başarısız: '+error.message); return; }
   toast(ban?'🚫 Kullanıcı engellendi.':'✅ Engel kaldırıldı.');
   buildAdmin();
+}
+
+// ═══════════════════════════════════════════════════
+// KAYNAK İSTEK PANOSU
+async function buildRequests(){
+  const ds=document.getElementById('reqDers');
+  if(ds && ds.options.length<=1) ds.innerHTML='<option value="">Genel</option>'+DERSLER.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join('');
+  const {data:reqs}=await SB.from('requests').select('*').order('created_at',{ascending:false});
+  const open=(reqs||[]).filter(r=>!r.resolved);
+  const el=document.getElementById('reqList'); if(!el)return;
+  if(!open.length){ el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">Açık istek yok</div><div class="empty-desc">İlk isteği sen oluştur.</div></div>'; return; }
+  el.innerHTML=open.map(r=>{
+    const mine=r.user_id===SESSION.userId, isAdmin=SESSION&&SESSION.isAdmin;
+    const d=new Date(r.created_at), ds2=`${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
+    const dn=r.ders?getDersName(r.ders):'Genel';
+    return `<div class="card card-md" style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-2)">
+      ${avatarHTML(r.user_name,r.user_id,'avatar-md')}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600">${esc(r.body)}</div>
+        <div style="font-size:var(--text-xs);color:var(--tx-tertiary);margin-top:2px">${esc(dn)} · ${esc(r.user_name||'?')} · ${ds2}</div>
+      </div>
+      <button class="btn btn-brand btn-sm" onclick="openUpload()">Karşıla</button>
+      ${(mine||isAdmin)?`<button class="btn btn-ghost btn-sm" onclick="resolveRequest(${r.id})">✓ Kapat</button>`:''}
+    </div>`;
+  }).join('');
+}
+async function createRequest(){
+  const body=v('reqText'); if(!body){toast('❌ Ne aradığını yaz.');return;}
+  const ders=document.getElementById('reqDers').value||'';
+  const {error}=await SB.from('requests').insert({user_id:SESSION.userId,user_name:SESSION.name,ders,body});
+  if(error){toast('❌ Hata: '+error.message);return;}
+  document.getElementById('reqText').value='';
+  toast('📥 İstek oluşturuldu!'); buildRequests();
+}
+async function resolveRequest(id){
+  const {error}=await SB.from('requests').update({resolved:true}).eq('id',id);
+  if(error){toast('❌ Hata: '+error.message);return;}
+  toast('✓ İstek kapatıldı'); buildRequests();
 }
 
 // ═══════════════════════════════════════════════════
