@@ -881,6 +881,15 @@ nav {
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
 }
+/* ── GÖRÜNÜRLÜK / PAYLAŞIM ── */
+.vis-seg{display:flex;gap:var(--sp-2);flex-wrap:wrap}
+.vis-opt{flex:1;min-width:110px;padding:9px;border-radius:var(--r-md);border:1px solid var(--border-2);background:var(--surface-1);color:var(--tx-secondary);cursor:pointer;font-size:var(--text-sm);font-weight:600;font-family:var(--font)}
+.vis-opt.active{border-color:var(--brand-500);background:rgba(99,102,241,.1);color:var(--brand-500)}
+.share-pick{max-height:170px;overflow-y:auto;margin-top:var(--sp-2);border:1px solid var(--border-1);border-radius:var(--r-md);padding:var(--sp-2)}
+.share-row{display:flex;align-items:center;gap:var(--sp-2);padding:7px 6px;border-radius:var(--r-sm);cursor:pointer;font-size:var(--text-sm)}
+.share-row:hover{background:var(--surface-2)}
+.share-row.sel{background:rgba(99,102,241,.1)}
+.share-check{margin-left:auto;color:var(--brand-500);font-weight:800}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a0a17">
@@ -1244,6 +1253,19 @@ nav {
       <label class="form-label">Etiketler <span style="color:var(--tx-tertiary);font-weight:400">(virgülle ayır, opsiyonel)</span></label>
       <input class="input" id="upTags" placeholder="Ör: vize, 2024, thevenin">
     </div>
+    <div class="form-field">
+      <label class="form-label">Görünürlük</label>
+      <div class="vis-seg">
+        <button type="button" class="vis-opt active" data-vis="public" onclick="setVis('public')">🌐 Herkese açık</button>
+        <button type="button" class="vis-opt" data-vis="private" onclick="setVis('private')">🔒 Sadece ben</button>
+        <button type="button" class="vis-opt" data-vis="shared" onclick="setVis('shared')">👥 Seçili kişiler</button>
+      </div>
+    </div>
+    <div class="form-field" id="sharePickWrap" style="display:none">
+      <label class="form-label">Kimlerle paylaşılsın?</label>
+      <input class="input" id="shareSearch" placeholder="İsim ara…" oninput="renderSharePick(this.value)">
+      <div id="sharePick" class="share-pick"></div>
+    </div>
 
     <div class="up-prog" id="upProg">
       <div class="up-prog-label">Yükleniyor…</div>
@@ -1345,7 +1367,7 @@ async function loadAllData(){
     id:r.id, title:r.title, desc:r.description, type:r.type, ders:r.ders,
     uploaderId:r.uploader_id, uploaderName:r.uploader_name,
     createdAt:new Date(r.created_at).getTime(),
-    fileName:r.file_name, fileSize:r.size, downloads:r.downloads||0, file_path:r.file_path, tags:r.tags||[],
+    fileName:r.file_name, fileSize:r.size, downloads:r.downloads||0, file_path:r.file_path, tags:r.tags||[], visibility:r.visibility||'public',
     likes:likeBy[r.id]||[], ratings:rateBy[r.id]||[], comments:comBy[r.id]||[]
   }));
   STATE.profiles = profiles.map(p=>({ id:p.id, name:p.name, year:p.year, downloads:p.downloads||0, is_admin:p.is_admin, banned:p.banned, saves:saveByUser[p.id]||[] }));
@@ -1533,6 +1555,7 @@ function cardHTML(f,saves,i=0){
     <div class="rcard-tags">
       <span class="tag tag-neutral">${esc(getDersName(f.ders))}</span>
       <span class="tag tag-neutral">${fileIcon(f.fileName)} ${(f.fileName||'').split('.').pop().toUpperCase()}</span>
+      ${f.visibility==='private'?'<span class="tag tag-neutral">🔒 Özel</span>':f.visibility==='shared'?'<span class="tag tag-neutral">👥 Paylaşılan</span>':''}
       ${(f.tags||[]).slice(0,3).map(tg=>`<span class="tag tag-neutral">#${esc(tg)}</span>`).join('')}
     </div>
     <div class="rcard-meta">
@@ -1934,12 +1957,14 @@ async function deleteFile(e,id){
 // ═══════════════════════════════════════════════════
 // UPLOAD
 let selFile=null;
+let UP_VIS='public'; const UP_SHARE=new Set();
 
 function openUpload(){ document.getElementById('uploadOverlay').classList.add('show') }
 function closeUpload(){
   document.getElementById('uploadOverlay').classList.remove('show');
   clearFile();
   ['upTitle','upDesc','upTags'].forEach(id=>document.getElementById(id).value='');
+  UP_VIS='public'; UP_SHARE.clear(); setVis('public'); const _ss=document.getElementById('shareSearch'); if(_ss)_ss.value='';
   document.getElementById('upProg').classList.remove('show');
   document.getElementById('upBtn').disabled=false;
 }
@@ -1966,6 +1991,24 @@ function clearFile(){
 }
 const fmtSize=b=>b<1048576?(b/1024).toFixed(1)+'KB':(b/1048576).toFixed(1)+'MB';
 
+function setVis(v){
+  UP_VIS=v;
+  document.querySelectorAll('.vis-opt').forEach(b=>b.classList.toggle('active',b.dataset.vis===v));
+  const w=document.getElementById('sharePickWrap'); if(w)w.style.display=v==='shared'?'':'none';
+  if(v==='shared')renderSharePick('');
+}
+function toggleShare(id){ if(UP_SHARE.has(id))UP_SHARE.delete(id); else UP_SHARE.add(id); renderSharePick(document.getElementById('shareSearch').value); }
+function renderSharePick(q){
+  const el=document.getElementById('sharePick'); if(!el)return;
+  const ql=(q||'').toLowerCase();
+  const list=STATE.profiles.filter(p=>p.id!==SESSION.userId && (p.name||'').toLowerCase().includes(ql));
+  el.innerHTML=list.length?list.map(p=>`<div class="share-row ${UP_SHARE.has(p.id)?'sel':''}" onclick="toggleShare('${p.id}')">
+    <div class="avatar avatar-sm av-${p.avatar||'a1'}">${esc((p.name||'?')[0]||'?')}</div>
+    <span>${esc(p.name||'(isimsiz)')}</span>
+    ${UP_SHARE.has(p.id)?'<span class="share-check">✓</span>':''}
+  </div>`).join(''):'<div class="sec-sub" style="color:var(--tx-tertiary);padding:6px">Kullanıcı bulunamadı.</div>';
+}
+
 async function doUpload(){
   const title=v('upTitle'), ders=v('upDers'), type=document.getElementById('upType').value, desc=v('upDesc');
   if(!selFile){toast('❌ Lütfen bir dosya seç.');return;}
@@ -1981,8 +2024,13 @@ async function doUpload(){
     const {error:upErr}=await SB.storage.from('files').upload(path,selFile,{upsert:false});
     if(upErr) throw upErr;
     const tags=v('upTags').split(',').map(x=>x.trim()).filter(Boolean).slice(0,8);
-    const {error:insErr}=await SB.from('files').insert({title,description:desc,type,ders,uploader_id:SESSION.userId,uploader_name:SESSION.name,file_path:path,file_name:selFile.name,size:selFile.size,tags});
+    const {data:newFile,error:insErr}=await SB.from('files').insert({title,description:desc,type,ders,uploader_id:SESSION.userId,uploader_name:SESSION.name,file_path:path,file_name:selFile.name,size:selFile.size,tags,visibility:UP_VIS}).select('id').single();
     if(insErr) throw insErr;
+    if(UP_VIS==='shared' && UP_SHARE.size && newFile){
+      const rows=[...UP_SHARE].map(uid=>({file_id:newFile.id,user_id:uid}));
+      const {error:shErr}=await SB.from('file_shares').insert(rows);
+      if(shErr) throw shErr;
+    }
   }catch(err){
     document.getElementById('upBtn').disabled=false;
     document.getElementById('upProg').classList.remove('show');
