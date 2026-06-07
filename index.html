@@ -890,6 +890,11 @@ nav {
 .share-row:hover{background:var(--surface-2)}
 .share-row.sel{background:rgba(99,102,241,.1)}
 .share-check{margin-left:auto;color:var(--brand-500);font-weight:800}
+.site-credit{text-align:center;padding:30px 16px 40px;margin-top:var(--sp-8);border-top:1px solid var(--border-1)}
+.credit-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--tx-tertiary);margin-bottom:12px}
+.credit-plate{display:inline-block;background:#f4f5f8;border-radius:16px;padding:8px 20px;box-shadow:0 6px 22px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.25)}
+.credit-plate img{height:62px;display:block}
+@media(max-width:560px){.credit-plate img{height:48px}}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a0a17">
@@ -1196,6 +1201,12 @@ nav {
     <div class="sec-head"><div class="sec-title">📁 Tüm Yüklemeler</div></div>
     <div id="adminFiles"></div>
   </div>
+
+  <!-- İMZA -->
+  <footer class="site-credit">
+    <div class="credit-label">Tasarım &amp; Geliştirme</div>
+    <div class="credit-plate"><img src="signature.png" alt="Yusuf Uzun" onerror="this.parentElement.parentElement.style.display='none'"></div>
+  </footer>
 
 </main>
 </div>
