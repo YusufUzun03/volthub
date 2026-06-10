@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoltHub — EEE Bilgi Merkezi</title>
+<meta name="description" content="Elektrik-Elektronik Mühendisliği öğrencileri için topluluk odaklı bilgi merkezi: ders notları, sınavlar, formüller ve interaktif hesaplayıcılar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body data-theme="light">
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav>
+  <div class="brand" onclick="goTo('anasayfa')">
+    <svg class="brand-mark" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22 25 L38 30.5 L22 36 L6 30.5 Z" fill="var(--acc)"/>
+      <path d="M14 32.5 L14 38 C14 41.2 17.6 42.8 22 42.8 C26.4 42.8 30 41.2 30 38 L30 32.5 L22 36 Z" fill="var(--acc)" opacity="0.55"/>
+      <path d="M34 31 L34 37 C34 38 34.8 38.6 35.7 38.6" stroke="var(--acc)" stroke-width="1.4" fill="none"/>
+      <circle cx="35.7" cy="39.3" r="1.6" fill="var(--acc)"/>
+      <path d="M22 26 L31 15 L25.5 15 L29.5 4 L14 17.5 L20.5 17.5 Z" fill="var(--acc)"/>
+    </svg>
+    <div>
+      <div class="brand-name">Volt<b>Hub</b></div>
+    </div>
+    <div class="brand-tag">EEE<br>Arşivi</div>
+  </div>
+
+  <div class="nav-links">
+    <a class="nav-link active" data-page="anasayfa" onclick="goTo('anasayfa')">Ana Sayfa</a>
+    <a class="nav-link" data-page="dersler" onclick="goTo('dersler')">Dersler</a>
+    <a class="nav-link" data-page="araclar" onclick="goTo('araclar')">Araçlar</a>
+    <a class="nav-link" data-page="kaynaklar" onclick="goTo('kaynaklar')">Kaynaklar</a>
+    <a class="nav-link" data-page="topluluk" onclick="goTo('topluluk')">Topluluk</a>
+    <a class="nav-link" data-page="istekler" onclick="goTo('istekler')">İstekler</a>
+  </div>
+
+  <div class="nav-right">
+    <div class="nav-search">
+      <span id="navSearchIco"></span>
+      <input id="searchInput" placeholder="Ara… (örn. EE 211)" oninput="handleSearch(this.value)" autocomplete="off">
+    </div>
+    <button class="btn btn-ghost btn-icon" onclick="toggleTheme()" title="Tema değiştir"><span id="themeIco">🌙</span></button>
+    <button id="navLoginBtn" class="btn btn-primary btn-sm" onclick="openAuth()">Giriş Yap</button>
+    <button id="navUploadBtn" class="btn btn-primary btn-sm" onclick="openUpload()" style="display:none"><span id="navUpIco"></span> Yükle</button>
+    <div id="navAvatar"></div>
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside class="sidebar">
+    <div class="sb-block">
+      <div class="sb-head" onclick="toggleSb(this)">Tür <span class="chev">▾</span></div>
+      <div class="sb-body" id="sbTypes"></div>
+    </div>
+    <div class="sb-block">
+      <div class="sb-head" onclick="toggleSb(this)">Dersler <span class="chev">▾</span></div>
+      <div class="sb-body" id="sbCourses"></div>
+    </div>
+  </aside>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <main class="main">
+
+    <!-- search results overlay container -->
+    <div id="searchResults" style="display:none"></div>
+
+    <div id="mainPages">
+
+      <!-- ───────── ANA SAYFA ───────── -->
+      <div class="page active" id="page-anasayfa">
+
+        <!-- HERO -->
+        <section class="hero">
+          <div class="container">
+            <div class="hero-grid">
+              <div>
+                <div class="hero-kicker eyebrow">Elektrik-Elektronik Mühendisliği · Topluluk Arşivi</div>
+                <h1>EEE <em>Arşivi</em></h1>
+                <p class="hero-lead">Ders notları, geçmiş sınavlar ve formül kağıtları tek yerde. Mühendislik hesaplayıcılarıyla ödevini hızlandır, aradığın kaynağı iste — ya da ilk paylaşan sen ol.</p>
+                <div class="hero-search">
+                  <span id="heroSearchIco"></span>
+                  <input id="searchInput2" placeholder="Ders kodu, konu ya da anahtar kelime ara…" oninput="handleSearch(this.value);document.getElementById('searchInput').value=this.value" autocomplete="off">
+                  <button class="btn btn-primary btn-sm">Ara</button>
+                </div>
+                <div class="hero-cta" style="margin-top:18px">
+                  <button class="btn btn-ghost" onclick="goTo('dersler')">📚 Dersleri keşfet</button>
+                  <button class="btn btn-ghost" onclick="goTo('araclar')">🧮 Hesaplayıcılar</button>
+                </div>
+                <div class="hero-stats">
+                  <div><div class="hstat-val" id="statFiles">—</div><div class="hstat-lbl">Paylaşılan kaynak</div></div>
+                  <div><div class="hstat-val" id="statUsers">—</div><div class="hstat-lbl">Topluluk üyesi</div></div>
+                  <div><div class="hstat-val"><span class="mono">17</span></div><div class="hstat-lbl">Müfredat dersi</div></div>
+                  <div><div class="hstat-val"><span class="mono">5</span></div><div class="hstat-lbl">Hesaplayıcı</div></div>
+                </div>
+              </div>
+              <div class="hero-visual">
+                <canvas id="heroCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="container">
+          <div id="trend" class="trend"></div>
+
+          <div id="chips" class="chips">
+            <div class="chip active" data-t="hepsi" onclick="setFilter('hepsi')">Tümü</div>
+            <div class="chip" data-t="not" onclick="setFilter('not')">📝 Ders Notu</div>
+            <div class="chip" data-t="sinav" onclick="setFilter('sinav')">📋 Sınav</div>
+            <div class="chip" data-t="kitap" onclick="setFilter('kitap')">📖 Kitap</div>
+            <div class="chip" data-t="formul" onclick="setFilter('formul')">🧮 Formül</div>
+            <div class="chip" data-t="diger" onclick="setFilter('diger')">📎 Diğer</div>
+          </div>
+
+          <div id="dersHead"></div>
+
+          <div class="sec-head">
+            <div class="sec-title" id="gridTitle">Son Yüklenenler</div>
+            <div class="sort-bar">
+              <span class="sec-sub" id="gridCount"></span>
+              <select class="select" id="sortSelect" onchange="setSort(this.value)">
+                <option value="new">⏱ En Yeni</option>
+                <option value="old">📜 En Eski</option>
+                <option value="dl">⬇️ En Çok İndirilen</option>
+                <option value="like">⭐ En Beğenilen</option>
+              </select>
+            </div>
+          </div>
+          <div class="rgrid" id="mainGrid"></div>
+        </div>
+      </div>
+
+      <!-- ───────── DERSLER ───────── -->
+      <div class="page" id="page-dersler">
+        <div class="container">
+          <div class="page-hero">
+            <div class="eyebrow">Müfredat</div>
+            <h1>EEE <em>Dersleri</em></h1>
+            <p>Elektrik-Elektronik Mühendisliği lisans müfredatındaki 17 çekirdek ders — ders kodları ve haftalık konu başlıklarıyla. Bir derse tıkla, o derse ait tüm kaynakları gör.</p>
+          </div>
+          <div id="dersGrid"></div>
+        </div>
+      </div>
+
+      <!-- ───────── ARAÇLAR ───────── -->
+      <div class="page" id="page-araclar">
+        <div class="container">
+          <div class="page-hero">
+            <div class="eyebrow">İnteraktif Hesaplayıcılar</div>
+            <h1>Mühendislik <em>Araçları</em></h1>
+            <p>Sık kullanılan EEE hesaplamaları tek yerde — ödev ve laboratuvarda anında kontrol et. Tüm hesaplayıcılar gerçek zamanlı çalışır.</p>
+          </div>
+          <div class="tool-grid" id="toolGrid"></div>
+        </div>
+      </div>
+
+      <!-- ───────── KAYNAKLAR ───────── -->
+      <div class="page" id="page-kaynaklar">
+        <div class="container">
+          <div class="page-hero">
+            <div class="eyebrow">Küratörlü Bağlantılar</div>
+            <h1>Faydalı <em>Kaynaklar</em></h1>
+            <p>Simülatörler, video dersler ve referanslar — EEE öğrencileri için seçilmiş en iyi ücretsiz kaynaklar.</p>
+          </div>
+          <div id="linkSections"></div>
+        </div>
+      </div>
+
+      <!-- ───────── TOPLULUK ───────── -->
+      <div class="page" id="page-topluluk">
+        <div class="container">
+          <div class="page-hero">
+            <div class="eyebrow">Katkı Sıralaması</div>
+            <h1>Topluluk <em>Liderleri</em></h1>
+            <p>En çok kaynak paylaşan ve en çok beğeni toplayan üyeler. Sen de yükleyerek listeye gir.</p>
+          </div>
+          <div class="sec-head" style="margin-bottom:16px">
+            <div class="sec-title">🏅 Liderlik Tablosu</div>
+            <div class="sec-sub mono">puan = yükleme×5 + beğeni×2 + indirme</div>
+          </div>
+          <div class="lb-list" id="lbList"></div>
+        </div>
+      </div>
+
+      <!-- ───────── İSTEKLER ───────── -->
+      <div class="page" id="page-istekler">
+        <div class="container">
+          <div class="page-hero">
+            <div class="eyebrow">Topluluk Talepleri</div>
+            <h1>Kaynak <em>İste</em></h1>
+            <p>Aradığın ama bulamadığın bir kaynak mı var? İste, biri yüklesin. En çok desteklenen istekler en üstte görünür.</p>
+          </div>
+          <div class="card">
+            <div class="field-row" style="align-items:flex-end">
+              <div class="field" style="flex:0 0 220px;margin:0"><label class="label">Ders (opsiyonel)</label><select class="input select" id="reqDers"><option value="">Genel</option></select></div>
+              <div class="field" style="flex:1;margin:0"><label class="label">Ne arıyorsun?</label><input class="input" id="reqText" placeholder="Ör: EE 211 2023 bütünleme soruları" maxlength="160" onkeydown="if(event.key==='Enter')createRequest()"></div>
+              <button class="btn btn-primary" onclick="createRequest()">İstek Oluştur</button>
+            </div>
+          </div>
+          <div class="sec-head" style="margin:26px 0 16px"><div class="sec-title">Açık İstekler</div></div>
+          <div class="req-list" id="reqList"></div>
+        </div>
+      </div>
+
+      <!-- ───────── PROFİL ───────── -->
+      <div class="page" id="page-profil">
+        <div class="container">
+          <div class="profile-hero" style="align-items:flex-start;position:relative">
+            <div style="position:relative">
+              <div class="avatar-edit" id="profileAvatar" onclick="toggleAvPop(event)"></div>
+              <div class="av-pop" id="avPop" onclick="event.stopPropagation()">
+                <div class="av-pop-title">🎨 Avatar rengini seç</div>
+                <div class="av-pick" id="avPick"></div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div class="name-row">
+                <div class="profile-name" id="profileName"></div>
+                <span id="profileBadge"></span>
+                <button class="edit-btn" onclick="editName()" title="İsmi düzenle">✎</button>
+              </div>
+              <div class="profile-sub" id="profileSub"></div>
+              <div id="bioWrap"></div>
+              <div class="tier-prog" id="tierProg"></div>
+            </div>
+          </div>
+
+          <div id="logoutWrap" style="margin-top:16px"></div>
+
+          <div class="pstats">
+            <div class="pstat"><div class="pstat-val" id="myUploads">0</div><div class="pstat-lbl">Yüklediğim</div></div>
+            <div class="pstat"><div class="pstat-val" id="myLikesRec">0</div><div class="pstat-lbl">Aldığım beğeni</div></div>
+            <div class="pstat"><div class="pstat-val" id="myDls">0</div><div class="pstat-lbl">İndirilme</div></div>
+            <div class="pstat"><div class="pstat-val" id="myScore">0</div><div class="pstat-lbl">Topluluk puanı</div></div>
+          </div>
+
+          <div class="card">
+            <div class="sec-head" style="margin-bottom:16px">
+              <div class="sec-title" style="font-size:17px">🏆 Başarımlar</div>
+              <div class="ach-summary" id="achSummary"></div>
+            </div>
+            <div class="ach-grid" id="achGrid"></div>
+          </div>
+
+          <div class="sec-head"><div class="sec-title">Yüklediklerim</div></div>
+          <div class="rgrid" id="myGrid"></div>
+          <div class="sec-head" style="margin-top:30px"><div class="sec-title">Kaydettiklerim</div></div>
+          <div class="rgrid" id="savedGrid"></div>
+        </div>
+      </div>
+
+    </div><!-- /mainPages -->
+
+    <!-- FOOTER -->
+    <footer class="foot">
+      <div class="container foot-inner">
+        <div>
+          <div class="foot-brand">Volt<span style="color:var(--acc)">Hub</span></div>
+          <div class="foot-note" style="margin-top:4px">EEE öğrencileri için, öğrenciler tarafından.</div>
+        </div>
+        <div class="foot-links">
+          <a onclick="goTo('dersler')">Dersler</a>
+          <a onclick="goTo('araclar')">Araçlar</a>
+          <a onclick="goTo('topluluk')">Topluluk</a>
+          <a onclick="toast('Kâr amacı gütmeyen, topluluk projesi 💙','💙')">Hakkında</a>
+        </div>
+        <div class="foot-note">© 2026 · Kâr amacı gütmez</div>
+      </div>
+    </footer>
+
+  </main>
+</div>
+
+<!-- ═══════════ MOBILE NAV ═══════════ -->
+<div class="mobile-nav">
+  <a class="mn-item active" data-page="anasayfa" onclick="goTo('anasayfa')"><span id="mnHome"></span>Ana</a>
+  <a class="mn-item" data-page="dersler" onclick="goTo('dersler')"><span id="mnBook"></span>Dersler</a>
+  <a class="mn-item" data-page="araclar" onclick="goTo('araclar')"><span id="mnTool"></span>Araçlar</a>
+  <a class="mn-item" data-page="topluluk" onclick="goTo('topluluk')"><span id="mnUsers"></span>Topluluk</a>
+  <a class="mn-item" data-page="profil" onclick="goTo('profil')"><span id="mnUser"></span>Profil</a>
+</div>
+
+<!-- ═══════════ UPLOAD MODAL ═══════════ -->
+<div class="overlay" id="uploadOverlay">
+  <div class="modal modal-wide">
+    <button class="modal-close" onclick="closeUpload()">✕</button>
+    <div class="modal-title">Kaynak Yükle</div>
+    <div class="modal-sub">Ders notu, sınav, kitap özeti, formül kağıdı veya bağlantı paylaş.</div>
+
+    <div class="seg" id="upKindSeg" style="margin-bottom:18px">
+      <div class="seg-opt active" data-k="file" onclick="setUpKind('file')">📄 Dosya</div>
+      <div class="seg-opt" data-k="link" onclick="setUpKind('link')">🔗 Bağlantı</div>
+    </div>
+
+    <div class="dropzone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+      <div class="dz-ico">📂</div>
+      <div class="dz-title">Dosyayı buraya bırak</div>
+      <div class="dz-sub">veya <b>tıkla ve seç</b> · PDF, DOC, PPT, PNG · Maks 20 MB</div>
+    </div>
+    <input type="file" id="fileInput" style="display:none" accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.txt" onchange="fileSelected(this.files[0])">
+
+    <div class="file-chip" id="filePreview" style="display:none">
+      <div class="file-chip-ico">📄</div>
+      <div style="flex:1;min-width:0"><div class="file-chip-name" id="fpName"></div><div class="file-chip-size" id="fpSize"></div></div>
+      <div class="file-chip-x" onclick="clearFile()">✕</div>
+    </div>
+
+    <div class="field" id="linkWrap" style="display:none"><label class="label">Bağlantı (URL)</label><input class="input" id="upUrl" type="url" placeholder="https://… (YouTube, makale, simülasyon, Drive)"></div>
+
+    <div class="field"><label class="label">Başlık</label><input class="input" id="upTitle" placeholder="Ör: Elektrik Devreleri Vize Notu 2024"></div>
+    <div class="field-row">
+      <div class="field" style="flex:1"><label class="label">Ders</label><select class="input select" id="upDers"><option value="">Ders seçin…</option></select></div>
+      <div class="field" style="flex:1"><label class="label">Tür</label>
+        <select class="input select" id="upType" onchange="onTypeChange()">
+          <option value="not">Ders Notu</option>
+          <option value="sinav">Geçmiş Sınav</option>
+          <option value="kitap">Kitap / Özet</option>
+          <option value="formul">Formül Listesi</option>
+          <option value="diger">Diğer</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" id="subtypeWrap" style="display:none"><label class="label">Sınav Alt Türü</label>
+      <select class="input select" id="upSubtype">
+        <option value="">Genel / Geçmiş Sınav</option>
+        <option value="vize">Vize Örnek Soru</option>
+        <option value="final">Final Örnek Soru</option>
+        <option value="quiz">Quiz / Ara Sınav</option>
+      </select>
+    </div>
+    <div class="field"><label class="label">Açıklama</label><input class="input" id="upDesc" placeholder="Ne içeriyor? Kısa bir tanım…"></div>
+    <div class="field"><label class="label">Etiketler <span style="color:var(--ink-3);font-weight:400">(virgülle ayır)</span></label><input class="input" id="upTags" placeholder="Ör: vize, 2024, thevenin"></div>
+
+    <div class="detail-actions">
+      <button class="btn btn-primary btn-block" onclick="submitUpload()">Yayınla</button>
+      <button class="btn btn-ghost" onclick="closeUpload()">Vazgeç</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ AUTH MODAL ═══════════ -->
+<div class="overlay" id="authOverlay" onclick="if(event.target===this)closeAuth()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAuth()">✕</button>
+    <div class="modal-title">VoltHub'a Hoş Geldin</div>
+    <div class="modal-sub">Kaynak paylaşmak, beğenmek ve kaydetmek için giriş yap.</div>
+    <div class="seg" id="authSeg" style="margin:18px 0">
+      <div class="seg-opt active" data-tab="login"    onclick="setAuthTab('login')">Giriş Yap</div>
+      <div class="seg-opt"        data-tab="register" onclick="setAuthTab('register')">Kayıt Ol</div>
+    </div>
+
+    <!-- Login -->
+    <div id="loginForm">
+      <div class="field"><label class="label">E-posta</label>
+        <input class="input" id="loginEmail" type="email" placeholder="email@ornek.com"
+          onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="field"><label class="label">Şifre</label>
+        <input class="input" id="loginPassword" type="password" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="detail-actions">
+        <button class="btn btn-primary btn-block" onclick="doLogin()">Giriş Yap</button>
+        <button class="btn btn-ghost btn-sm" style="font-size:12px;color:var(--ink-3)" onclick="setAuthTab('register')">Hesabın yok mu? Kayıt ol →</button>
+      </div>
+    </div>
+
+    <!-- Register -->
+    <div id="registerForm" style="display:none">
+      <div class="field"><label class="label">Ad Soyad</label>
+        <input class="input" id="regName" placeholder="Adın Soyadın"
+          onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <div class="field"><label class="label">Sınıf</label>
+        <select class="input select" id="regYear">
+          <option value="1">1. Sınıf</option>
+          <option value="2">2. Sınıf</option>
+          <option value="3" selected>3. Sınıf</option>
+          <option value="4">4. Sınıf</option>
+          <option value="mezun">Mezun</option>
+        </select>
+      </div>
+      <div class="field"><label class="label">E-posta</label>
+        <input class="input" id="regEmail" type="email" placeholder="email@ornek.com"
+          onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <div class="field"><label class="label">Şifre <span style="color:var(--ink-3);font-weight:400">(en az 6 karakter)</span></label>
+        <input class="input" id="regPassword" type="password" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <div class="detail-actions">
+        <button class="btn btn-primary btn-block" onclick="doRegister()">Kayıt Ol</button>
+        <button class="btn btn-ghost btn-sm" style="font-size:12px;color:var(--ink-3)" onclick="setAuthTab('login')">← Giriş yap</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DETAIL MODAL ═══════════ -->
+<div class="overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeDetail()">✕</button>
+    <div id="detailBody"></div>
+  </div>
+</div>
+
+<!-- ═══════════ TOASTS ═══════════ -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="data.js"></script>
+<script src="hero.js"></script>
+<script src="calculators.js"></script>
+<script src="supabase.js"></script>
+<script src="app.js"></script>
+<script>
+  // inject inline icons after scripts load
+  document.addEventListener('DOMContentLoaded', () => {
+    const set = (id, ic) => { const e = document.getElementById(id); if (e) e.innerHTML = ic; };
+    set('navSearchIco', ICON.search); set('heroSearchIco', ICON.search); set('navUpIco', ICON.up);
+    set('mnHome', ICON.home); set('mnBook', ICON.book); set('mnTool', ICON.tool); set('mnUsers', ICON.users); set('mnUser', ICON.user);
+  });
+</script>
+</body>
+</html>
