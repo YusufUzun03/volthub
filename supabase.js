@@ -5,8 +5,8 @@
 ═══════════════════════════════════════════════════════════ */
 
 // ── CONFIG — replace with your project values ──────────────
-const SUPABASE_URL      = 'https://YOUR_PROJECT_REF.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE';
+const SUPABASE_URL      = 'https://bgqudrmtbgdrrtgaauvo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJncXVkcm10YmdkcnJ0Z2FhdXZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NzE3NjYsImV4cCI6MjA5NjM0Nzc2Nn0.auL0BYdgRgEuR6wUjWIdtJxIpfCCKetiztQfpqgsYMQ';
 // ───────────────────────────────────────────────────────────
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
