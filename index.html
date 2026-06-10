@@ -36,6 +36,7 @@
     <a class="nav-link" data-page="kaynaklar" onclick="goTo('kaynaklar')">Kaynaklar</a>
     <a class="nav-link" data-page="topluluk" onclick="goTo('topluluk')">Topluluk</a>
     <a class="nav-link" data-page="istekler" onclick="goTo('istekler')">İstekler</a>
+    <a class="nav-link" id="navAdminLink" data-page="admin" onclick="goTo('admin')" style="display:none">Yönetici</a>
   </div>
 
   <div class="nav-right">
@@ -252,6 +253,23 @@
           <div class="rgrid" id="myGrid"></div>
           <div class="sec-head" style="margin-top:30px"><div class="sec-title">Kaydettiklerim</div></div>
           <div class="rgrid" id="savedGrid"></div>
+        </div>
+      </div>
+
+      <!-- ───────── YÖNETİCİ PANELİ ───────── -->
+      <div class="page" id="page-admin">
+        <div class="container">
+          <div class="page-hero">
+            <div class="eyebrow">Yönetici</div>
+            <h1>Admin <em>Paneli</em></h1>
+            <p>Dosyaları, kullanıcıları ve istekleri yönet.</p>
+          </div>
+          <div class="seg" id="adminTabs" style="margin-bottom:24px">
+            <div class="seg-opt active" data-tab="files" onclick="setAdminTab('files')">📁 Dosyalar</div>
+            <div class="seg-opt" data-tab="users" onclick="setAdminTab('users')">👥 Kullanıcılar</div>
+            <div class="seg-opt" data-tab="reqs" onclick="setAdminTab('reqs')">📥 İstekler</div>
+          </div>
+          <div id="adminContent"></div>
         </div>
       </div>
 

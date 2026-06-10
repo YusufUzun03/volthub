@@ -83,43 +83,6 @@ const LINKS = [
   ]},
 ];
 
-// ── Seed kullanıcılar ──
-const SEED_PROFILES = [
-  { id:'u_elif',   name:'Elif Demir',     year:3, avatar:'a1', uploads:14, likes:62, dls:340 },
-  { id:'u_kaan',   name:'Kaan Yılmaz',    year:4, avatar:'a2', uploads:11, likes:48, dls:280 },
-  { id:'u_zeynep', name:'Zeynep Aksoy',   year:2, avatar:'a4', uploads:9,  likes:51, dls:190 },
-  { id:'u_mert',   name:'Mert Çelik',     year:4, avatar:'a3', uploads:7,  likes:33, dls:155 },
-  { id:'u_irem',   name:'İrem Şahin',     year:3, avatar:'a5', uploads:6,  likes:40, dls:120 },
-  { id:'u_burak',  name:'Burak Öztürk',   year:'mezun', avatar:'a6', uploads:5, likes:28, dls:210 },
-  { id:'u_sena',   name:'Sena Korkmaz',   year:2, avatar:'a7', uploads:4,  likes:19, dls:88 },
-];
-
-// ── Seed kaynaklar ──
-const now = Date.now();
-const day = 86400000;
-const SEED_FILES = [
-  { id:'f1', title:'Elektrik Devreleri — Vize 1 Çözümlü Sorular', ders:'ee211', type:'sinav', subtype:'vize', desc:'2024 güz dönemi vize sorularının adım adım çözümü, Thevenin ağırlıklı.', tags:['vize','2024','thevenin'], uid:'u_elif', t: now-2*day, dls:142, likes:38, kind:'file', ext:'pdf' },
-  { id:'f2', title:'Thevenin & Norton Özet Notu', ders:'ee211', type:'not', desc:'Tek sayfada eşdeğer devre çıkarma yöntemleri ve püf noktaları.', tags:['özet','thevenin','norton'], uid:'u_kaan', t: now-5*day, dls:98, likes:27, kind:'file', ext:'pdf' },
-  { id:'f3', title:'Sayısal Devreler Formül Kağıdı', ders:'ee241', type:'formul', desc:'Boole özdeşlikleri, kapı tabloları ve K-map kuralları.', tags:['formül','boole','kmap'], uid:'u_zeynep', t: now-1*day, dls:76, likes:31, kind:'file', ext:'pdf' },
-  { id:'f4', title:'Nilsson — Electric Circuits 11. Baskı (Özet)', ders:'ee211', type:'kitap', desc:'Bölüm bölüm kitap özeti ve önemli teoremler.', tags:['kitap','nilsson','özet'], uid:'u_mert', t: now-8*day, dls:210, likes:44, kind:'file', ext:'pdf' },
-  { id:'f5', title:'Op-Amp Konfigürasyonları Şeması', ders:'ee333', type:'not', desc:'İnvertör, non-invertör, integratör, türev alıcı devre şemaları.', tags:['opamp','analog','şema'], uid:'u_irem', t: now-3*day, dls:64, likes:22, kind:'file', ext:'png' },
-  { id:'f6', title:'EE 232 Final Örnek Soru Bankası', ders:'ee232', type:'sinav', subtype:'final', desc:'Geçmiş yıl finallerinden derlenmiş 40 soru.', tags:['final','soru bankası','bjt'], uid:'u_kaan', t: now-6*day, dls:188, likes:52, kind:'file', ext:'pdf' },
-  { id:'f7', title:'Laplace Dönüşüm Tablosu', ders:'ee212', type:'formul', desc:'Sık kullanılan dönüşüm çiftleri ve özellikleri.', tags:['laplace','formül'], uid:'u_elif', t: now-4*day, dls:130, likes:35, kind:'file', ext:'pdf' },
-  { id:'f8', title:'Maxwell Denklemleri — Diferansiyel & İntegral Form', ders:'ee226', type:'not', desc:'Dört denklemin fiziksel yorumu ve birimleri.', tags:['maxwell','em','özet'], uid:'u_burak', t: now-10*day, dls:54, likes:18, kind:'file', ext:'pdf' },
-  { id:'f9', title:'Mikroişlemci Lab — 8051 Assembly Notları', ders:'ee242', type:'not', desc:'Komut seti, adresleme modları ve örnek programlar.', tags:['8051','assembly','lab'], uid:'u_zeynep', t: now-7*day, dls:81, likes:24, kind:'file', ext:'docx' },
-  { id:'f10', title:'Kontrol Sistemleri — Bode & Nyquist Cheatsheet', ders:'ee384', type:'formul', desc:'Kararlılık kriterleri ve çizim adımları tek sayfada.', tags:['kontrol','bode','nyquist'], uid:'u_mert', t: now-1.5*day, dls:47, likes:20, kind:'file', ext:'pdf' },
-  { id:'f11', title:'DSP — Z-Dönüşümü Çözümlü Örnekler', ders:'ee361', type:'sinav', subtype:'quiz', desc:'Quiz hazırlığı için 15 çözümlü Z-dönüşümü sorusu.', tags:['dsp','z-transform','quiz'], uid:'u_irem', t: now-9*day, dls:39, likes:15, kind:'file', ext:'pdf' },
-  { id:'f12', title:'Güç Sistemleri — Per-Unit Hesap Rehberi', ders:'ee372', type:'not', desc:'Per-unit sistemine geçiş ve kısa devre örnekleri.', tags:['güç','per-unit'], uid:'u_burak', t: now-12*day, dls:33, likes:12, kind:'file', ext:'pdf' },
-  { id:'f13', title:'Haberleşme Sistemleri Ders Videosu (AM/FM)', ders:'ee354', type:'diger', desc:'Modülasyon konusunu anlatan harici video bağlantısı.', tags:['video','modülasyon'], uid:'u_kaan', t: now-2.5*day, dls:58, likes:21, kind:'link', url:'https://www.youtube.com/' },
-  { id:'f14', title:'Sayısal Devreler — Final Çözümleri 2023', ders:'ee241', type:'sinav', subtype:'final', desc:'2023 final tam çözüm, FSM tasarım sorusu dahil.', tags:['final','2023','fsm'], uid:'u_sena', t: now-5.5*day, dls:112, likes:29, kind:'file', ext:'pdf' },
-];
-
-const SEED_REQUESTS = [
-  { id:'r1', text:'EE 211 2023 bütünleme soruları arıyorum', ders:'ee211', uid:'u_sena', t: now-1*day, votes:7, resolved:false },
-  { id:'r2', text:'Analog elektronik (EE 333) lab föyleri var mı?', ders:'ee333', uid:'u_mert', t: now-3*day, votes:4, resolved:false },
-  { id:'r3', text:'Sinyaller ve sistemler için iyi bir Türkçe kaynak önerisi', ders:'ee212', uid:'u_zeynep', t: now-6*day, votes:11, resolved:false },
-  { id:'r4', text:'EE 242 vize çıkmış sorular (çözümlü olursa süper)', ders:'ee242', uid:'u_irem', t: now-2*day, votes:5, resolved:false },
-];
 
 // ── Rozet kademeleri (topluluk puanına göre) ──
 // puan = yükleme×5 + alınan beğeni×2 + alınan indirme

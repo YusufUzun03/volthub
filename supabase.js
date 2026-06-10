@@ -75,6 +75,9 @@ async function _onSignIn(user, showToast) {
 
   await _loadUserData();
 
+  if (typeof loadDbFiles === 'function') await loadDbFiles();
+  if (typeof loadDbLeaderboard === 'function') loadDbLeaderboard();
+
   _updateAuthUI(true);
   renderAll();
   if (showToast) toast(`Hoş geldin, ${STATE.me.name.split(' ')[0]}! 👋`, '✅');
@@ -84,12 +87,16 @@ async function _onSignIn(user, showToast) {
 function _onSignOut() {
   SB_USER = null; SB_PROFILE = null;
   STATE.me      = LS.get('me', { id: 'me', name: 'Misafir Öğrenci', year: 3, avatar: 'a1' });
-  STATE.myFiles = LS.get('myFiles', []);
+  STATE.myFiles = [];
   STATE.likes   = new Set(LS.get('likes', []));
   STATE.saves   = new Set(LS.get('saves', []));
   STATE.votes   = new Set(LS.get('votes', []));
   STATE.reqs    = LS.get('reqs', []);
+  if (typeof DB_FILES !== 'undefined') DB_FILES = [];
+  if (typeof DB_LEADERBOARD !== 'undefined') DB_LEADERBOARD = [];
   _updateAuthUI(false);
+  if (typeof loadDbFiles === 'function') loadDbFiles();
+  if (typeof loadDbLeaderboard === 'function') loadDbLeaderboard();
   renderAll();
   toast('Çıkış yapıldı', '👋');
 }
@@ -115,13 +122,16 @@ function _updateAuthUI(loggedIn) {
   const loginBtn  = document.getElementById('navLoginBtn');
   const uploadBtn = document.getElementById('navUploadBtn');
   const avatar    = document.getElementById('navAvatar');
+  const adminLink = document.getElementById('navAdminLink');
   if (loggedIn) {
     if (loginBtn)  loginBtn.style.display  = 'none';
     if (uploadBtn) uploadBtn.style.display = '';
+    if (adminLink) adminLink.style.display = SB_PROFILE?.is_admin ? '' : 'none';
     renderTopbarAvatar();
   } else {
     if (loginBtn)  loginBtn.style.display  = '';
     if (uploadBtn) uploadBtn.style.display = 'none';
+    if (adminLink) adminLink.style.display = 'none';
     if (avatar) avatar.innerHTML = '';
   }
 }
@@ -178,7 +188,28 @@ async function sbGetDownloadUrl(filePath) {
   return data?.signedUrl || null;
 }
 
+async function sbGetAllPublicFiles() {
+  const { data, error } = await sb.from('files')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) { console.error('sbGetAllPublicFiles:', error); return []; }
+  return (data || []).map(_dbFileToLocal);
+}
+
+async function sbGetLeaderboard() {
+  const { data, error } = await sb.from('profile_stats')
+    .select('id, name, year, avatar, upload_count, download_count, like_count')
+    .order('upload_count', { ascending: false })
+    .limit(50);
+  if (error) return [];
+  return (data || []).map(p => ({
+    id: p.id, name: p.name, year: p.year, avatar: p.avatar || 'a1',
+    uploads: p.upload_count, dls: p.download_count, likes: p.like_count,
+  }));
+}
+
 function _dbFileToLocal(row) {
+  const isMe = SB_USER && row.uploader_id === SB_USER.id;
   return {
     id:      String(row.id),
     title:   row.title,
@@ -186,7 +217,8 @@ function _dbFileToLocal(row) {
     type:    row.type   || 'diger',
     subtype: row.subtype || undefined,
     ders:    row.ders   || '',
-    uid:     'me',
+    uid:     isMe ? 'me' : (row.uploader_id || 'unknown'),
+    uname:   row.uploader_name || '',
     t:       new Date(row.created_at).getTime(),
     dls:     row.downloads || 0,
     likes:   0,
@@ -347,4 +379,55 @@ async function doRegister() {
   } finally {
     btn.disabled = false; btn.textContent = 'Kayıt Ol';
   }
+}
+
+/* ═══════════ ADMIN ════════════════════════════════════════ */
+async function sbAdminGetFiles() {
+  const { data, error } = await sb.from('files').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(_dbFileToLocal);
+}
+
+async function sbAdminDeleteFile(fileId) {
+  const numId = parseInt(fileId, 10);
+  if (isNaN(numId)) return;
+  const { data: f } = await sb.from('files').select('file_path').eq('id', numId).single();
+  if (f?.file_path) await sb.storage.from('files').remove([f.file_path]);
+  const { error } = await sb.from('files').delete().eq('id', numId);
+  if (error) throw error;
+}
+
+async function sbAdminGetUsers() {
+  const { data, error } = await sb.from('profiles')
+    .select('id, name, year, avatar, is_admin, banned, created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+async function sbAdminSetBan(userId, banned) {
+  const { error } = await sb.from('profiles').update({ banned }).eq('id', userId);
+  if (error) throw error;
+}
+
+async function sbAdminGetRequests() {
+  const { data, error } = await sb.from('requests_with_votes')
+    .select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(r => ({
+    id: String(r.id), text: r.body, ders: r.ders || '',
+    uid: r.user_id, uname: r.user_name || '',
+    t: new Date(r.created_at).getTime(),
+    votes: r.vote_count || 0, resolved: r.resolved,
+  }));
+}
+
+async function sbAdminResolveRequest(reqId) {
+  const { error } = await sb.from('requests').update({ resolved: true }).eq('id', parseInt(reqId, 10));
+  if (error) throw error;
+}
+
+async function sbAdminDeleteRequest(reqId) {
+  const { error } = await sb.from('requests').delete().eq('id', parseInt(reqId, 10));
+  if (error) throw error;
 }

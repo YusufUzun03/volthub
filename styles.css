@@ -712,3 +712,13 @@ nav {
 .mn-item { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 9.5px; color: var(--ink-3); padding: 4px 8px; flex: 1; }
 .mn-item svg { width: 20px; height: 20px; }
 .mn-item.active { color: var(--acc); }
+
+/* ═══════════ ADMIN PANEL ════════════════════════ */
+.admin-table { border: 1px solid var(--bor); border-radius: 12px; overflow: hidden; }
+.at-head { display: grid; grid-template-columns: 3fr 1fr 1fr 1fr 130px; gap: 12px; padding: 10px 16px; background: var(--bg-2); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); align-items: center; }
+.at-row { display: grid; grid-template-columns: 3fr 1fr 1fr 1fr 130px; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--bor); font-size: 13px; color: var(--ink); align-items: center; transition: background .15s; }
+.at-row:hover { background: var(--bg-2); }
+.at-row.banned { opacity: .55; background: oklch(0.97 0.015 20); }
+.at-row.resolved { color: var(--ink-3); }
+.at-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.loading { padding: 40px; text-align: center; color: var(--ink-3); font-size: 14px; }

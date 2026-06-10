@@ -23,22 +23,19 @@ const STATE = {
   page: 'anasayfa',
 };
 
-// DB requests loaded from Supabase (separate from localStorage reqs)
 let DB_REQS = [];
+let DB_FILES = [];
+let DB_LEADERBOARD = [];
 
-function allFiles() {
-  return [...STATE.myFiles, ...SEED_FILES];
-}
+function allFiles() { return DB_FILES; }
 function allReqs() {
-  // DB_REQS already covers what STATE.reqs would have for logged-in users
   const localReqs = SB_USER ? [] : STATE.reqs;
-  return [...localReqs, ...SEED_REQUESTS, ...DB_REQS];
+  return [...localReqs, ...DB_REQS];
 }
 function profileOf(uid) {
   if (uid === 'me') return STATE.me;
-  const seed = SEED_PROFILES.find(p => p.id === uid);
-  if (seed) return seed;
-  // DB requests/files store the uploader name directly on the object
+  const lb = DB_LEADERBOARD.find(p => p.id === uid);
+  if (lb) return { id: uid, name: lb.name, avatar: lb.avatar };
   return { id: uid, name: 'Bilinmeyen', avatar: 'a8' };
 }
 function dersOf(id) { return DERSLER.find(d => d.id === id); }
@@ -84,18 +81,18 @@ function goTo(page, scroll = true) {
   document.querySelectorAll('.mn-item').forEach(l => l.classList.toggle('active', l.dataset.page === page));
   clearSearch();
   if (page === 'dersler') renderDersPage();
-  if (page === 'topluluk') renderLeaderboard();
+  if (page === 'topluluk') { renderLeaderboard(); loadDbLeaderboard(); }
   if (page === 'istekler') { renderRequests(); loadDbReqs(); }
   if (page === 'profil') renderProfile();
+  if (page === 'admin') renderAdmin();
   if (scroll) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ═══════════ STATS / HERO ═══════════ */
 function renderStats() {
   const files = allFiles();
-  const users = SEED_PROFILES.length + 1;
-  setText('statFiles', files.length);
-  setText('statUsers', users);
+  setText('statFiles', files.length || '—');
+  setText('statUsers', DB_LEADERBOARD.length || '—');
 }
 function setText(id, t) { const el = document.getElementById(id); if (el) el.textContent = t; }
 
@@ -199,7 +196,7 @@ function cardHTML(f) {
       <div class="rcard-meta act ${liked ? 'liked' : ''}" onclick="toggleLike('${f.id}',this)">${liked ? ICON.heartFill : ICON.heart}<span>${likeCount(f)}</span></div>
       <div class="rcard-meta">${ICON.down}<span>${f.dls}</span></div>
       <div class="rcard-meta act" onclick="toggleSave('${f.id}',this)" style="${saved ? 'color:var(--acc)' : ''}">${saved ? ICON.bookmarkFill : ICON.bookmark}</div>
-      <div class="rcard-author">${avatarHTML(f.uid, 'xs')}<span class="av-name">${esc(profileOf(f.uid).name.split(' ')[0])}</span></div>
+      <div class="rcard-author">${avatarHTML(f.uid, 'xs')}<span class="av-name">${esc((f.uname || profileOf(f.uid).name).split(' ')[0])}</span></div>
     </div>
   </div>`;
 }
@@ -250,16 +247,24 @@ function renderDersPage() {
 
 /* ═══════════ LEADERBOARD ═══════════ */
 function renderLeaderboard() {
-  const me = { ...STATE.me, uploads: STATE.myFiles.length, likes: STATE.myFiles.reduce((a, f) => a + likeCount(f), 0), dls: STATE.myFiles.reduce((a, f) => a + f.dls, 0) };
-  const rows = [...SEED_PROFILES, me].map(p => ({ ...p, score: p.uploads * 5 + p.likes * 2 + p.dls }))
-    .sort((a, b) => b.score - a.score);
+  if (!DB_LEADERBOARD.length) {
+    document.getElementById('lbList').innerHTML = `<div class="empty"><div class="empty-ico">⏳</div><div class="empty-title">Yükleniyor…</div></div>`;
+    return;
+  }
+  const rows = DB_LEADERBOARD.map(p => ({
+    ...p,
+    score: p.uploads * 5 + p.likes * 2 + p.dls,
+    isMe: SB_USER && p.id === SB_USER.id,
+  })).sort((a, b) => b.score - a.score);
   document.getElementById('lbList').innerHTML = rows.map((p, i) => {
     const b = badgeFor(p.score);
+    const col = AV_COLORS[p.isMe ? STATE.me.avatar : (p.avatar || 'a1')] || AV_COLORS.a1;
+    const av = `<div class="avatar md" style="background:${col}">${esc(((p.isMe ? STATE.me.name : p.name) || '?')[0])}</div>`;
     return `<div class="lb-row ${i === 0 ? 'top1' : ''} fade-up">
       <div class="lb-rank">${i + 1}</div>
-      ${avatarHTML(p.id, 'md')}
+      ${av}
       <div class="lb-info">
-        <div class="lb-name">${esc(p.name)}${p.id === 'me' ? ' <span class="tag" style="font-size:9px;padding:2px 7px">sen</span>' : ''}</div>
+        <div class="lb-name">${esc(p.isMe ? STATE.me.name : p.name)}${p.isMe ? ' <span class="tag" style="font-size:9px;padding:2px 7px">sen</span>' : ''}</div>
         <div class="lb-sub"><span class="badge sm" style="color:${b.color};border-color:${b.color};background:${b.soft}"><span class="badge-ico">${b.icon}</span>${b.name}</span> · ${p.year === 'mezun' ? 'Mezun' : p.year + '. sınıf'}</div>
       </div>
       <div class="lb-bars">
@@ -270,6 +275,16 @@ function renderLeaderboard() {
       <div class="lb-score">${p.score}<span>puan</span></div>
     </div>`;
   }).join('');
+}
+
+async function loadDbLeaderboard() {
+  try { DB_LEADERBOARD = await sbGetLeaderboard(); } catch { DB_LEADERBOARD = []; }
+  if (STATE.page === 'topluluk') renderLeaderboard();
+  renderStats();
+}
+
+async function loadDbFiles() {
+  try { DB_FILES = await sbGetAllPublicFiles(); } catch { DB_FILES = []; }
 }
 
 /* ═══════════ LINKS (kaynaklar) ═══════════ */
@@ -364,16 +379,17 @@ async function loadDbReqs() {
 
 /* ═══════════ PROFILE ═══════════ */
 function myStats() {
-  const uploads = STATE.myFiles.length;
-  const likesReceived = STATE.myFiles.reduce((a, f) => a + likeCount(f), 0);
-  const dlsReceived = STATE.myFiles.reduce((a, f) => a + f.dls, 0);
+  const myF = DB_FILES.filter(f => f.uid === 'me');
+  const uploads = myF.length;
+  const likesReceived = myF.reduce((a, f) => a + likeCount(f), 0);
+  const dlsReceived = myF.reduce((a, f) => a + f.dls, 0);
   const score = uploads * 5 + likesReceived * 2 + dlsReceived;
   return {
     uploads, likesReceived, dlsReceived, score,
     saves: STATE.saves.size,
     likesGiven: STATE.likes.size,
     votes: STATE.votes.size,
-    requests: STATE.reqs.length,
+    requests: DB_REQS.filter(r => r.uid === 'me').length + STATE.reqs.length,
   };
 }
 
@@ -428,7 +444,7 @@ function renderProfile() {
       : `<button class="btn btn-primary btn-sm" onclick="openAuth()">Giriş Yap</button>`;
   }
 
-  const mine = STATE.myFiles;
+  const mine = DB_FILES.filter(f => f.uid === 'me');
   document.getElementById('myGrid').innerHTML = mine.length
     ? mine.map(cardHTML).join('')
     : `<div class="empty" style="grid-column:1/-1"><div class="empty-ico">📤</div><div class="empty-title">Henüz yükleme yok</div><div class="empty-sub">İlk kaynağını paylaş, topluluğa katkıda bulun.</div></div>`;
@@ -574,7 +590,7 @@ function openDetail(id, silent) {
     ${f.tags && f.tags.length ? `<div class="rcard-tags" style="margin-bottom:18px">${f.tags.map(t => `<span class="rtag">#${esc(t)}</span>`).join('')}</div>` : ''}
     <div>
       <div class="detail-row"><span class="dr-label">Tür</span><span class="type-pill ${tc.cls}" style="position:static">${tc.label}</span>${f.subtype ? `<span class="rtag">${esc(f.subtype)}</span>` : ''}</div>
-      <div class="detail-row"><span class="dr-label">Paylaşan</span>${avatarHTML(f.uid, 'sm')}<span>${esc(profileOf(f.uid).name)}</span></div>
+      <div class="detail-row"><span class="dr-label">Paylaşan</span>${avatarHTML(f.uid, 'sm')}<span>${esc(f.uname || profileOf(f.uid).name)}</span></div>
       <div class="detail-row"><span class="dr-label">Yüklenme</span><span>${timeAgo(f.t)}</span></div>
       <div class="detail-row"><span class="dr-label">İstatistik</span><span class="mono" style="font-size:13px">${likeCount(f)} beğeni · ${f.dls} indirme</span></div>
       ${f.kind === 'link' ? `<div class="detail-row"><span class="dr-label">Bağlantı</span><a href="${f.url}" target="_blank" rel="noopener" style="color:var(--acc)">${esc(f.url)} ↗</a></div>` : `<div class="detail-row"><span class="dr-label">Dosya</span><span class="mono" style="font-size:13px">.${f.ext || 'pdf'} · ${(2 + Math.random() * 6).toFixed(1)} MB</span></div>`}
@@ -672,7 +688,7 @@ async function submitUpload() {
 
   try {
     const newFile = await sbInsertFile(meta, isLink ? null : pendingFile);
-    STATE.myFiles.unshift(newFile);
+    DB_FILES.unshift(newFile);
     closeUpload();
     renderSidebar(); renderArchive(); renderTrend(); renderStats();
     goTo('anasayfa');
@@ -736,6 +752,136 @@ function toast(msg, ico = '✅') {
 /* ═══════════ SIDEBAR COLLAPSE ═══════════ */
 function toggleSb(head) { head.classList.toggle('collapsed'); }
 
+/* ═══════════ ADMIN PANEL ═══════════ */
+let ADMIN_TAB = 'files';
+
+function renderAdmin() {
+  if (!SB_PROFILE?.is_admin) { goTo('anasayfa'); return; }
+  document.querySelectorAll('#adminTabs .seg-opt').forEach(o =>
+    o.classList.toggle('active', o.dataset.tab === ADMIN_TAB));
+  if (ADMIN_TAB === 'files') renderAdminFiles();
+  else if (ADMIN_TAB === 'users') renderAdminUsers();
+  else if (ADMIN_TAB === 'reqs') renderAdminRequests();
+}
+
+function setAdminTab(tab) {
+  ADMIN_TAB = tab;
+  renderAdmin();
+}
+
+async function renderAdminFiles() {
+  const el = document.getElementById('adminContent');
+  el.innerHTML = '<div class="loading">Yükleniyor…</div>';
+  let files;
+  try { files = await sbAdminGetFiles(); } catch { el.innerHTML = '<div class="loading">Hata oluştu</div>'; return; }
+  if (!files.length) { el.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><div class="empty-title">Henüz dosya yok</div></div>'; return; }
+  el.innerHTML = `<div class="admin-table">
+    <div class="at-head"><span>Dosya</span><span>Ders</span><span>Yükleyen</span><span>Tarih</span><span></span></div>
+    ${files.map(f => `<div class="at-row">
+      <span class="at-title" title="${esc(f.title)}">${esc(f.title)}</span>
+      <span>${esc((f.ders || '—').toUpperCase())}</span>
+      <span>${esc(f.uname || 'Bilinmeyen')}</span>
+      <span>${timeAgo(f.t)}</span>
+      <span><button class="btn btn-ghost btn-sm" style="color:var(--red);font-size:12px" onclick="adminDeleteFile('${f.id}',this)">Sil</button></span>
+    </div>`).join('')}
+  </div>`;
+}
+
+async function adminDeleteFile(id, btn) {
+  if (!confirm('Bu dosyayı silmek istediğinden emin misin?')) return;
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    await sbAdminDeleteFile(id);
+    DB_FILES = DB_FILES.filter(f => f.id !== id);
+    renderArchive(); renderSidebar(); renderStats();
+    renderAdminFiles();
+    toast('Dosya silindi', '🗑️');
+  } catch (e) {
+    toast('Hata: ' + (e.message || 'Bilinmeyen'), '❌');
+    if (btn) { btn.disabled = false; btn.textContent = 'Sil'; }
+  }
+}
+
+async function renderAdminUsers() {
+  const el = document.getElementById('adminContent');
+  el.innerHTML = '<div class="loading">Yükleniyor…</div>';
+  let users;
+  try { users = await sbAdminGetUsers(); } catch { el.innerHTML = '<div class="loading">Hata oluştu</div>'; return; }
+  if (!users.length) { el.innerHTML = '<div class="empty"><div class="empty-ico">👥</div><div class="empty-title">Henüz kullanıcı yok</div></div>'; return; }
+  el.innerHTML = `<div class="admin-table">
+    <div class="at-head"><span>Kullanıcı</span><span>Sınıf</span><span>Rol</span><span>Katılım</span><span></span></div>
+    ${users.map(u => `<div class="at-row${u.banned ? ' banned' : ''}">
+      <span>${esc(u.name || 'Adsız')}</span>
+      <span>${u.year === 'mezun' ? 'Mezun' : (u.year ? u.year + '. Sınıf' : '—')}</span>
+      <span>${u.is_admin ? '⭐ Admin' : 'Üye'}</span>
+      <span>${timeAgo(new Date(u.created_at).getTime())}</span>
+      <span>${u.is_admin ? '' : `<button class="btn btn-ghost btn-sm" style="color:${u.banned ? 'var(--acc)' : 'var(--red)'};font-size:12px" onclick="adminToggleBan('${u.id}',${!u.banned},this)">${u.banned ? 'Engeli Kaldır' : 'Engelle'}</button>`}</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+async function adminToggleBan(userId, ban, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    await sbAdminSetBan(userId, ban);
+    renderAdminUsers();
+    toast(ban ? 'Kullanıcı engellendi' : 'Engel kaldırıldı', ban ? '🚫' : '✅');
+  } catch (e) {
+    toast('Hata: ' + (e.message || 'Bilinmeyen'), '❌');
+    if (btn) { btn.disabled = false; }
+  }
+}
+
+async function renderAdminRequests() {
+  const el = document.getElementById('adminContent');
+  el.innerHTML = '<div class="loading">Yükleniyor…</div>';
+  let reqs;
+  try { reqs = await sbAdminGetRequests(); } catch { el.innerHTML = '<div class="loading">Hata oluştu</div>'; return; }
+  if (!reqs.length) { el.innerHTML = '<div class="empty"><div class="empty-ico">📥</div><div class="empty-title">Henüz istek yok</div></div>'; return; }
+  el.innerHTML = `<div class="admin-table">
+    <div class="at-head"><span>İstek</span><span>Ders</span><span>Oy</span><span>Durum</span><span></span></div>
+    ${reqs.map(r => `<div class="at-row${r.resolved ? ' resolved' : ''}">
+      <span class="at-title" title="${esc(r.text)}">${esc(r.text)}</span>
+      <span>${esc(r.ders || 'Genel')}</span>
+      <span>${r.votes}</span>
+      <span>${r.resolved ? '✓ Çözüldü' : 'Açık'}</span>
+      <span style="display:flex;gap:6px">
+        ${!r.resolved ? `<button class="btn btn-ghost btn-sm" style="font-size:12px" onclick="adminResolveReq('${r.id}',this)">Çözüldü</button>` : ''}
+        <button class="btn btn-ghost btn-sm" style="color:var(--red);font-size:12px" onclick="adminDeleteReq('${r.id}',this)">Sil</button>
+      </span>
+    </div>`).join('')}
+  </div>`;
+}
+
+async function adminResolveReq(id, btn) {
+  if (btn) btn.disabled = true;
+  try {
+    await sbAdminResolveRequest(id);
+    DB_REQS = DB_REQS.filter(r => r.id !== id);
+    renderRequests();
+    renderAdminRequests();
+    toast('İstek çözüldü olarak işaretlendi', '✅');
+  } catch (e) {
+    toast('Hata', '❌');
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function adminDeleteReq(id, btn) {
+  if (!confirm('Bu isteği silmek istediğinden emin misin?')) return;
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    await sbAdminDeleteRequest(id);
+    DB_REQS = DB_REQS.filter(r => r.id !== id);
+    renderRequests();
+    renderAdminRequests();
+    toast('İstek silindi', '🗑️');
+  } catch (e) {
+    toast('Hata', '❌');
+    if (btn) { btn.disabled = false; btn.textContent = 'Sil'; }
+  }
+}
+
 /* ─── Render everything visible ─── */
 function renderAll() {
   renderStats();
@@ -747,6 +893,7 @@ function renderAll() {
   if (STATE.page === 'topluluk') renderLeaderboard();
   if (STATE.page === 'istekler') renderRequests();
   if (STATE.page === 'profil')   renderProfile();
+  if (STATE.page === 'admin')    renderAdmin();
 }
 
 /* ═══════════ INIT ═══════════ */
@@ -767,6 +914,10 @@ async function init() {
 
   // Boot Supabase (checks for existing session, sets up auth listener)
   await sbInit();
+  // Load all public files and leaderboard (SB_USER is set if session exists)
+  await loadDbFiles();
+  loadDbLeaderboard();
+  renderSidebar(); renderArchive(); renderTrend(); renderStats();
 }
 document.addEventListener('DOMContentLoaded', init);
 document.addEventListener('keydown', e => {
