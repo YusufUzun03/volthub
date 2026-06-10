@@ -183,8 +183,14 @@ async function sbBumpDownload(fileId) {
   await sb.rpc('bump_download', { fid: numId });
 }
 
+function sbGetPublicUrl(filePath) {
+  if (!filePath) return null;
+  const { data } = sb.storage.from('files').getPublicUrl(filePath);
+  return data?.publicUrl || null;
+}
+
 async function sbGetDownloadUrl(filePath) {
-  const { data } = await sb.storage.from('files').createSignedUrl(filePath, 120);
+  const { data } = await sb.storage.from('files').createSignedUrl(filePath, 3600);
   return data?.signedUrl || null;
 }
 

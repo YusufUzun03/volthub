@@ -578,6 +578,23 @@ function openDetail(id, silent) {
   const tc = TYPE_CFG[f.type];
   const liked = STATE.likes.has(f.id);
   const saved = STATE.saves.has(f.id);
+
+  // Build inline preview for stored files
+  let previewHtml = '';
+  if (f.fromDB && f.file_path) {
+    const url = sbGetPublicUrl(f.file_path);
+    if (url) {
+      if (f.ext === 'pdf') {
+        previewHtml = `<div class="preview-wrap">
+          <iframe src="${url}" class="pdf-frame" title="${esc(f.title)}"></iframe>
+          <div class="preview-hint">Kaydırmak için PDF içine tıkla · <a href="${url}" target="_blank" rel="noopener" style="color:var(--acc)">Yeni sekmede aç ↗</a></div>
+        </div>`;
+      } else if (['png','jpg','jpeg','gif','webp','svg'].includes(f.ext)) {
+        previewHtml = `<div class="preview-wrap"><img src="${url}" class="preview-img" alt="${esc(f.title)}"></div>`;
+      }
+    }
+  }
+
   document.getElementById('detailBody').innerHTML = `
     <div class="detail-head">
       <div class="detail-ico">${tc.icon}</div>
@@ -593,8 +610,9 @@ function openDetail(id, silent) {
       <div class="detail-row"><span class="dr-label">Paylaşan</span>${avatarHTML(f.uid, 'sm')}<span>${esc(f.uname || profileOf(f.uid).name)}</span></div>
       <div class="detail-row"><span class="dr-label">Yüklenme</span><span>${timeAgo(f.t)}</span></div>
       <div class="detail-row"><span class="dr-label">İstatistik</span><span class="mono" style="font-size:13px">${likeCount(f)} beğeni · ${f.dls} indirme</span></div>
-      ${f.kind === 'link' ? `<div class="detail-row"><span class="dr-label">Bağlantı</span><a href="${f.url}" target="_blank" rel="noopener" style="color:var(--acc)">${esc(f.url)} ↗</a></div>` : `<div class="detail-row"><span class="dr-label">Dosya</span><span class="mono" style="font-size:13px">.${f.ext || 'pdf'} · ${(2 + Math.random() * 6).toFixed(1)} MB</span></div>`}
+      ${f.kind === 'link' ? `<div class="detail-row"><span class="dr-label">Bağlantı</span><a href="${f.url}" target="_blank" rel="noopener" style="color:var(--acc)">${esc(f.url)} ↗</a></div>` : `<div class="detail-row"><span class="dr-label">Dosya</span><span class="mono" style="font-size:13px">.${f.ext || 'pdf'}</span></div>`}
     </div>
+    ${previewHtml}
     <div class="detail-actions">
       <button class="btn btn-primary" onclick="downloadFile('${f.id}')">${ICON.down} ${f.kind === 'link' ? 'Bağlantıyı Aç' : 'İndir'}</button>
       <button class="btn btn-ghost" id="dLike" onclick="toggleLike('${f.id}')">${liked ? ICON.heartFill : ICON.heart} ${likeCount(f)}</button>
@@ -607,23 +625,17 @@ async function downloadFile(id) {
   const f = allFiles().find(x => x.id === id);
   if (!f) return;
   if (f.kind === 'link') { window.open(f.url, '_blank'); return; }
-
   if (f.fromDB && f.file_path) {
-    try {
-      const signedUrl = await sbGetDownloadUrl(f.file_path);
-      if (signedUrl) {
-        window.open(signedUrl, '_blank');
-        await sbBumpDownload(id);
-        f.dls++;
-        renderArchive();
-        return;
-      }
-    } catch (e) {
-      console.error('Download error:', e);
+    const url = sbGetPublicUrl(f.file_path);
+    if (url) {
+      window.open(url, '_blank');
+      sbBumpDownload(id).catch(() => {});
+      f.dls++;
+      renderArchive();
+      return;
     }
   }
-
-  toast('İndirme başladı (demo)', '⬇️');
+  toast('İndirme bağlantısı bulunamadı', '❌');
 }
 
 /* ═══════════ UPLOAD MODAL ═══════════ */
