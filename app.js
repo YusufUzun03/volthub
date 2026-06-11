@@ -632,6 +632,7 @@ function burst(el) { if (el) { el.animate([{ transform: 'scale(1)' }, { transfor
 
 /* ═══════════ DETAIL MODAL ═══════════ */
 async function openDetail(id, silent) {
+  if (!SB_USER) { toast('Belgeyi görüntülemek için giriş yapman gerekiyor', '🔒'); openAuth(); return; }
   const f = allFiles().find(x => x.id === id);
   if (!f) return;
   const d = dersOf(f.ders);
@@ -779,6 +780,7 @@ function closeTerms()  { document.getElementById('termsOverlay')?.classList.remo
 function openPrivacy() { document.getElementById('privacyOverlay')?.classList.add('open'); }
 function closePrivacy(){ document.getElementById('privacyOverlay')?.classList.remove('open'); }
 async function downloadFile(id) {
+  if (!SB_USER) { toast('İndirmek için giriş yapman gerekiyor', '🔒'); openAuth(); return; }
   const f = allFiles().find(x => x.id === id);
   if (!f) return;
   if (f.kind === 'link') { window.open(f.url, '_blank'); return; }
