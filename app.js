@@ -69,7 +69,7 @@ const ICON = {
   user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
 };
 
-const ADMIN_COLOR = 'oklch(0.70 0.22 82)';
+const ADMIN_COLOR = '#111';
 
 function avatarHTML(uid, size = 'md') {
   const p = profileOf(uid);
