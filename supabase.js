@@ -249,7 +249,8 @@ async function sbGetDownloadUrl(filePath) {
 async function sbGetAllPublicFiles() {
   const { data, error } = await sb.from('files')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(500);
   if (error) { console.error('sbGetAllPublicFiles:', error); return []; }
   return (data || []).map(_dbFileToLocal);
 }
@@ -415,7 +416,11 @@ async function doLogin() {
     await sbSignIn(email, password);
     closeAuth();
   } catch (e) {
-    toast(e.message || 'Giriş başarısız', '❌');
+    if (e.message?.toLowerCase().includes('email not confirmed')) {
+      toast('E-posta adresin henüz doğrulanmamış. Gelen kutuyu ve spam klasörünü kontrol et 📧', '⚠️');
+    } else {
+      toast(e.message || 'Giriş başarısız', '❌');
+    }
   } finally {
     btn.disabled = false; btn.textContent = 'Giriş Yap';
   }

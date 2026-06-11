@@ -518,7 +518,7 @@ nav {
 }
 .profile-name { font-family: var(--serif); font-size: 26px; font-weight: 600; line-height: 1.15; white-space: nowrap; }
 .profile-sub { font-size: 14px; color: var(--ink-2); margin-top: 4px; }
-.pstats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 26px; }
+.pstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 26px; }
 .pstat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 20px; text-align: center; box-shadow: var(--sh-1); }
 .pstat-val { font-family: var(--serif); font-size: 30px; font-weight: 600; color: var(--acc); }
 .pstat-lbl { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
@@ -721,7 +721,7 @@ nav {
 }
 @media (max-width: 560px) {
   .hero-stats { gap: 22px; flex-wrap: wrap; }
-  .pstats { grid-template-columns: 1fr; }
+  .pstats { grid-template-columns: repeat(2, 1fr); }
   .gano-row { grid-template-columns: 1fr 60px 78px 32px; }
   .brand-tag { display: none; }
 }

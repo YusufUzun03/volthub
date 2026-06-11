@@ -5,12 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VoltHub — EEE Bilgi Merkezi</title>
 <meta name="description" content="Elektrik-Elektronik Mühendisliği öğrencileri için topluluk odaklı bilgi merkezi: ders notları, sınavlar, formüller ve interaktif hesaplayıcılar.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="VoltHub — EEE Bilgi Merkezi">
+<meta property="og:description" content="Elektrik-Elektronik Mühendisliği öğrencileri için topluluk odaklı bilgi merkezi: ders notları, sınavlar, formüller ve interaktif hesaplayıcılar.">
+<meta property="og:site_name" content="VoltHub">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="VoltHub — EEE Bilgi Merkezi">
+<meta name="twitter:description" content="EEE öğrencileri için ücretsiz ders notları, sınavlar ve mühendislik hesaplayıcıları.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
 </head>
 <body data-theme="light">
 
@@ -295,6 +305,8 @@
           <a onclick="goTo('araclar')">Araçlar</a>
           <a onclick="goTo('topluluk')">Topluluk</a>
           <a onclick="toast('Kâr amacı gütmeyen, topluluk projesi 💙','💙')">Hakkında</a>
+          <a onclick="openTerms()" style="cursor:pointer">Kullanım Koşulları</a>
+          <a onclick="openPrivacy()" style="cursor:pointer">Gizlilik</a>
         </div>
         <div class="foot-note">© 2026 · Kâr amacı gütmez</div>
       </div>
@@ -415,6 +427,10 @@
       <div class="field"><label class="label">Şifre <span style="color:var(--ink-3);font-weight:400">(en az 6 karakter)</span></label>
         <input class="input" id="regPassword" type="password" placeholder="••••••••"
           onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <p style="font-size:11.5px;color:var(--ink-3);margin:6px 0 2px;text-align:center;line-height:1.6">
+        Kayıt olarak <a onclick="openTerms()" style="color:var(--acc);cursor:pointer;text-decoration:underline">Kullanım Koşulları</a>'nı ve
+        <a onclick="openPrivacy()" style="color:var(--acc);cursor:pointer;text-decoration:underline">Gizlilik Politikası</a>'nı kabul etmiş olursunuz.
+      </p>
       <div class="detail-actions">
         <button class="btn btn-primary btn-block" onclick="doRegister()">Kayıt Ol</button>
         <button class="btn btn-ghost btn-sm" style="font-size:12px;color:var(--ink-3)" onclick="setAuthTab('login')">← Giriş yap</button>
@@ -434,11 +450,58 @@
 <!-- ═══════════ TOASTS ═══════════ -->
 <div class="toast-wrap" id="toastWrap"></div>
 
-<script src="data.js?v=6"></script>
-<script src="hero.js?v=6"></script>
-<script src="calculators.js?v=6"></script>
-<script src="supabase.js?v=6"></script>
-<script src="app.js?v=6"></script>
+<!-- ═══════════ TERMS MODAL ═══════════ -->
+<div class="overlay" id="termsOverlay" onclick="if(event.target===this)closeTerms()">
+  <div class="modal modal-wide" style="max-height:80vh;overflow-y:auto">
+    <button class="modal-close" onclick="closeTerms()">✕</button>
+    <div class="modal-title">Kullanım Koşulları</div>
+    <div style="font-size:14px;line-height:1.7;color:var(--ink-2)">
+      <p>VoltHub, Elektrik-Elektronik Mühendisliği öğrencileri için topluluk amacıyla oluşturulmuş, kâr amacı gütmeyen bir bilgi arşividir. Platformu kullanmaya devam ederek bu koşulları kabul etmiş sayılırsınız.</p>
+      <h4 style="color:var(--ink);margin:16px 0 6px">İçerik Sorumluluğu</h4>
+      <ul style="padding-left:18px;margin:0 0 8px">
+        <li>Yüklediğiniz içerikler tamamen sizin sorumluluğunuzdadır.</li>
+        <li>Telif hakkıyla korunan materyalleri izinsiz paylaşmak yasaktır.</li>
+        <li>Yanıltıcı, zararlı veya akademik dürüstlüğe aykırı içerik yüklenemez.</li>
+      </ul>
+      <h4 style="color:var(--ink);margin:16px 0 6px">Platform Hakları</h4>
+      <ul style="padding-left:18px;margin:0">
+        <li>Platform, önceden haber vermeksizin uygunsuz içerikleri kaldırabilir ve hesapları askıya alabilir.</li>
+        <li>Yalnızca eğitim amaçlıdır; ticari kullanım yasaktır.</li>
+        <li>Hizmet kesintisiz erişim garantisi vermez.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PRIVACY MODAL ═══════════ -->
+<div class="overlay" id="privacyOverlay" onclick="if(event.target===this)closePrivacy()">
+  <div class="modal modal-wide" style="max-height:80vh;overflow-y:auto">
+    <button class="modal-close" onclick="closePrivacy()">✕</button>
+    <div class="modal-title">Gizlilik Politikası &amp; KVKK</div>
+    <div style="font-size:14px;line-height:1.7;color:var(--ink-2)">
+      <p><strong style="color:var(--ink)">Veri Sorumlusu:</strong> VoltHub</p>
+      <h4 style="color:var(--ink);margin:14px 0 6px">İşlenen Kişisel Veriler</h4>
+      <p style="margin:0 0 8px">Ad-soyad, e-posta adresi, akademik sınıf bilgisi ve profil avatar rengi.</p>
+      <h4 style="color:var(--ink);margin:14px 0 6px">İşleme Amaçları</h4>
+      <ul style="padding-left:18px;margin:0 0 8px">
+        <li>Kullanıcı hesabı oluşturma ve kimlik doğrulama</li>
+        <li>Topluluk profili, puanlama ve başarım hizmetleri</li>
+        <li>Yükleme ve indirme istatistiklerinin tutulması</li>
+      </ul>
+      <h4 style="color:var(--ink);margin:14px 0 6px">Saklama ve Güvenlik</h4>
+      <p style="margin:0 0 8px">Verileriniz Supabase altyapısında (AB–ABD veri işleyen) saklanmaktadır. Hesabınızı sildiğinizde verileriniz de silinir. Pazarlama amaçlı üçüncü taraf paylaşımı yapılmaz.</p>
+      <h4 style="color:var(--ink);margin:14px 0 6px">Haklarınız (KVKK m.11)</h4>
+      <p style="margin:0">Kişisel verilerinize erişim, düzeltme, silme ve işlemeye itiraz hakkına sahipsiniz. Talepleriniz için platform yöneticisiyle iletişime geçebilirsiniz.</p>
+    </div>
+  </div>
+</div>
+
+<!-- bump ?v= on every deploy to bust browser cache -->
+<script src="data.js?v=8"></script>
+<script src="hero.js?v=8"></script>
+<script src="calculators.js?v=8"></script>
+<script src="supabase.js?v=8"></script>
+<script src="app.js?v=8"></script>
 <script>
   // inject inline icons after scripts load
   document.addEventListener('DOMContentLoaded', () => {

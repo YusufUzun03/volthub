@@ -484,10 +484,14 @@ function renderProfile() {
       `<div class="av-opt ${STATE.me.avatar === k ? 'active' : ''}" style="background:${col}" onclick="setAvatar('${k}')">${esc(displayName[0])}</div>`).join('');
 
   // stats
-  setText('myUploads', s.uploads);
-  setText('myLikesRec', s.likesReceived);
-  setText('myDls', s.dlsReceived);
-  setText('myScore', s.score);
+  if (loggedIn) {
+    setText('myUploads', s.uploads);
+    setText('myLikesRec', s.likesReceived);
+    setText('myDls', s.dlsReceived);
+    setText('myScore', s.score);
+  } else {
+    ['myUploads', 'myLikesRec', 'myDls', 'myScore'].forEach(id => setText(id, '—'));
+  }
 
   // achievements
   renderAchievements(s);
@@ -770,6 +774,10 @@ async function deleteComment(commentId, fileId) {
   } catch { toast('Hata', '❌'); }
 }
 function closeDetail() { document.getElementById('detailOverlay').classList.remove('open'); }
+function openTerms()   { document.getElementById('termsOverlay')?.classList.add('open'); }
+function closeTerms()  { document.getElementById('termsOverlay')?.classList.remove('open'); }
+function openPrivacy() { document.getElementById('privacyOverlay')?.classList.add('open'); }
+function closePrivacy(){ document.getElementById('privacyOverlay')?.classList.remove('open'); }
 async function downloadFile(id) {
   const f = allFiles().find(x => x.id === id);
   if (!f) return;
@@ -791,8 +799,6 @@ async function downloadFile(id) {
 async function extractPdfText(file) {
   if (!window.pdfjsLib) return '';
   try {
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
     const buf = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
     const maxPages = Math.min(pdf.numPages, 15);
@@ -1186,7 +1192,7 @@ async function init() {
 document.addEventListener('DOMContentLoaded', init);
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    closeDetail(); closeUpload(); closeAuth();
+    closeDetail(); closeUpload(); closeAuth(); closeTerms(); closePrivacy();
     const p = document.getElementById('avPop'); if (p) p.classList.remove('open');
   }
 });

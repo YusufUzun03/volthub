@@ -170,8 +170,8 @@ grant execute on function public.bump_download(bigint) to authenticated;
 
 
 
-update public.profiles set is_admin = true
-where id = (select id from auth.users where email = 'yuzun2005@gmail.com');
+-- ADMIN: Supabase Panel → SQL Editor → çalıştır:
+-- UPDATE public.profiles SET is_admin = true WHERE id = (SELECT id FROM auth.users WHERE email = 'ADMİN_EMAİLİNİ_BURAYA_YAZ');
 
 
 
