@@ -299,11 +299,11 @@ async function sbGetMyLikes(uid) {
   return (data || []).map(r => String(r.file_id));
 }
 
-async function sbToggleLike(fileId) {
+async function sbToggleLike(fileId, wasLiked) {
   const numId = parseInt(fileId, 10);
   if (isNaN(numId)) return null;   // seed file — skip DB
 
-  if (STATE.likes.has(fileId)) {
+  if (wasLiked) {
     await sb.from('likes').delete().eq('file_id', numId).eq('user_id', SB_USER.id);
     return false;
   } else {

@@ -603,7 +603,7 @@ async function toggleLike(id, el) {
   renderArchive();
   if (document.getElementById('detailOverlay').classList.contains('open')) openDetail(id, true);
   if (SB_USER) {
-    try { await sbToggleLike(id); }
+    try { await sbToggleLike(id, wasLiked); }
     catch {
       // Rollback
       if (wasLiked) STATE.likes.add(id); else STATE.likes.delete(id);
