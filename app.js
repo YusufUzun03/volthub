@@ -643,7 +643,7 @@ async function openDetail(id, silent) {
   // Build inline preview for stored files
   let previewHtml = '';
   if (f.fromDB && f.file_path) {
-    const url = await sbGetDownloadUrl(f.file_path);
+    const url = sbGetPublicUrl(f.file_path);
     if (url) {
       if (f.ext === 'pdf') {
         previewHtml = `<div class="preview-wrap">
@@ -785,7 +785,7 @@ async function downloadFile(id) {
   if (!f) return;
   if (f.kind === 'link') { window.open(f.url, '_blank'); return; }
   if (f.fromDB && f.file_path) {
-    const url = await sbGetDownloadUrl(f.file_path);
+    const url = sbGetPublicUrl(f.file_path);
     if (url) {
       window.open(url, '_blank');
       sbBumpDownload(id).catch(() => {});
