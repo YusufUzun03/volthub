@@ -138,7 +138,8 @@ function rcRenderControls() {
   if (!wrap) return;
   const row = (label, key, filter, val) =>
     `<div class="rc-band-pick"><label>${label}</label>
-      <select class="input select" onchange="rcState['${key}']=+this.value;rcCalc()">
+      <span class="rc-swatch" id="sw_${key}" style="background:${RC_COLORS[val].hex}"></span>
+      <select class="input select" onchange="rcState['${key}']=+this.value;document.getElementById('sw_${key}').style.background=RC_COLORS[this.value].hex;rcCalc()">
         ${RC_COLORS.map((c, i) => {
           if (filter === 'digit' && c.d === undefined) return '';
           if (filter === 'tol' && c.tol === undefined) return '';
@@ -175,27 +176,84 @@ function rcCalc() {
 function drawResistor(bands) {
   const wrap = document.getElementById('rcSvg');
   if (!wrap) return;
-  const W = 230, H = 96, bodyX = 36, bodyW = 158, bodyY = 30, bodyH = 36;
-  const start = bodyX + 16, end = bodyX + bodyW - 14;
-  const step = (end - start) / Math.max(bands.length - 1, 1);
-  let bandsSvg = bands.map((b, i) => {
-    const x = start + i * step;
-    return `<rect x="${x - 4}" y="${bodyY - 4}" width="8" height="${bodyH + 8}" rx="2" fill="${b.hex}" stroke="rgba(0,0,0,.18)" stroke-width=".6"/>`;
+  const W = 300, H = 120;
+  const cy = 55;
+  const bX = 46, bW = 208, bY = 24, bH = 58;
+  const R = bH / 2;
+  const cW = 24;
+  const aX = bX + cW + 8, aW = bW - (cW + 8) * 2;
+  const n = bands.length;
+  const bSW = Math.min(13, (aW / (n + 1)) * 0.82);
+  const spc = aW / (n + 1);
+  const bandRects = bands.map((b, i) => {
+    const x = (aX + spc * (i + 1) - bSW / 2).toFixed(1);
+    return `<rect x="${x}" y="${bY}" width="${bSW.toFixed(1)}" height="${bH}" fill="${b.hex}" stroke="rgba(0,0,0,.14)" stroke-width=".4"/>`;
   }).join('');
-  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:300px">
-    <line x1="0" y1="${H/2}" x2="${bodyX}" y2="${H/2}" stroke="var(--ink-4)" stroke-width="2.5"/>
-    <line x1="${bodyX+bodyW}" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="var(--ink-4)" stroke-width="2.5"/>
-    <rect x="${bodyX}" y="${bodyY}" width="${bodyW}" height="${bodyH}" rx="18" fill="var(--paper-2)" stroke="var(--line-2)" stroke-width="1.5"/>
-    <rect x="${bodyX+6}" y="${bodyY}" width="14" height="${bodyH}" fill="var(--surface-2)" opacity=".6"/>
-    <rect x="${bodyX+bodyW-20}" y="${bodyY}" width="14" height="${bodyH}" fill="var(--surface-2)" opacity=".6"/>
-    ${bandsSvg}
-  </svg>`;
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:340px;display:block;margin:0 auto" aria-label="Direnç renk kodu görseli">
+  <defs>
+    <linearGradient id="rcgB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#f5edd5"/>
+      <stop offset="12%"  stop-color="#e6d098"/>
+      <stop offset="48%"  stop-color="#c09848"/>
+      <stop offset="82%"  stop-color="#8c6820"/>
+      <stop offset="100%" stop-color="#664c10"/>
+    </linearGradient>
+    <linearGradient id="rcgC" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#f0f0f0"/>
+      <stop offset="22%"  stop-color="#d0d0d0"/>
+      <stop offset="60%"  stop-color="#9a9a9a"/>
+      <stop offset="100%" stop-color="#666"/>
+    </linearGradient>
+    <linearGradient id="rcgH" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="rgba(255,255,255,.68)"/>
+      <stop offset="42%"  stop-color="rgba(255,255,255,.06)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+    <linearGradient id="rcgD" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="rgba(0,0,0,0)"/>
+      <stop offset="58%"  stop-color="rgba(0,0,0,0)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,.3)"/>
+    </linearGradient>
+    <clipPath id="rcgClip">
+      <rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" rx="${R}"/>
+    </clipPath>
+  </defs>
+
+  <!-- ground shadow -->
+  <ellipse cx="${bX + bW / 2}" cy="${bY + bH + 11}" rx="${(bW * .40).toFixed(0)}" ry="6" fill="rgba(0,0,0,.12)"/>
+
+  <!-- lead wires -->
+  <line x1="2"           y1="${cy}" x2="${bX + 1}"     y2="${cy}" stroke="#a8b8c8" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="${bX + bW}" y1="${cy}" x2="${W - 2}"       y2="${cy}" stroke="#a8b8c8" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- body -->
+  <rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" rx="${R}" fill="url(#rcgB)"/>
+
+  <!-- bands + caps, all clipped to pill shape -->
+  <g clip-path="url(#rcgClip)">
+    ${bandRects}
+    <rect x="${bX}"               y="${bY}" width="${cW}"   height="${bH}" fill="url(#rcgC)"/>
+    <rect x="${bX + cW - 1.5}"    y="${bY}" width="2"       height="${bH}" fill="rgba(0,0,0,.2)"/>
+    <rect x="${bX + bW - cW}"     y="${bY}" width="${cW}"   height="${bH}" fill="url(#rcgC)"/>
+    <rect x="${bX + bW - cW}"     y="${bY}" width="2"       height="${bH}" fill="rgba(0,0,0,.2)"/>
+  </g>
+
+  <!-- top gloss -->
+  <rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" rx="${R}" fill="url(#rcgH)"/>
+  <!-- bottom rim shadow -->
+  <rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" rx="${R}" fill="url(#rcgD)"/>
+  <!-- specular line -->
+  <rect x="${bX + R}" y="${bY + 8}" width="${bW - R * 2}" height="3.5" rx="1.8" fill="rgba(255,255,255,.32)"/>
+</svg>`;
 }
 
 function buildTools() {
   document.getElementById('toolGrid').innerHTML = `
     <div class="tool">
-      <div class="tool-head"><div class="tool-ico">⚡</div><div><div class="tool-title">Ohm Yasası & Güç</div><div class="tool-formula">V = I·R · P = V·I</div></div></div>
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--spark-soft);border-color:var(--spark)">⚡</div>
+        <div><div class="tool-title">Ohm Yasası & Güç</div><div class="tool-formula">V = I·R &nbsp;·&nbsp; P = V·I</div></div>
+      </div>
       <div class="field-row">
         <div class="field"><label class="label">Gerilim (V)</label><input class="input" id="ohmV" type="number" placeholder="Volt" oninput="ohmCalc()"></div>
         <div class="field"><label class="label">Akım (A)</label><input class="input" id="ohmI" type="number" placeholder="Amper" oninput="ohmCalc()"></div>
@@ -205,13 +263,19 @@ function buildTools() {
     </div>
 
     <div class="tool">
-      <div class="tool-head"><div class="tool-ico">🔗</div><div><div class="tool-title">Seri & Paralel Direnç</div><div class="tool-formula">Rs = ΣR · 1/Rp = Σ(1/R)</div></div></div>
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--acc-soft);border-color:var(--acc-line)">🔗</div>
+        <div><div class="tool-title">Seri & Paralel Direnç</div><div class="tool-formula">Rs = ΣR &nbsp;·&nbsp; 1/Rp = Σ(1/R)</div></div>
+      </div>
       <div class="field"><label class="label">Direnç değerleri (Ω, virgülle ayır)</label><input class="input" id="srVals" placeholder="Ör: 220, 330, 1000" oninput="srCalc()"></div>
       <div class="result empty" id="srRes">Direnç değerlerini virgülle ayırarak gir (Ω).</div>
     </div>
 
     <div class="tool">
-      <div class="tool-head"><div class="tool-ico">〰️</div><div><div class="tool-title">Reaktans & Rezonans</div><div class="tool-formula">XL = 2πfL · XC = 1/2πfC</div></div></div>
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--green-soft);border-color:var(--green)">〰️</div>
+        <div><div class="tool-title">Reaktans & Rezonans</div><div class="tool-formula">X<sub>L</sub> = 2πfL &nbsp;·&nbsp; X<sub>C</sub> = 1/2πfC</div></div>
+      </div>
       <div class="field"><label class="label">Frekans (Hz)</label><input class="input" id="rxF" type="number" placeholder="Ör: 50" oninput="rxCalc()"></div>
       <div class="field-row">
         <div class="field"><label class="label">Bobin L (mH)</label><input class="input" id="rxL" type="number" placeholder="mH" oninput="rxCalc()"></div>
@@ -221,7 +285,10 @@ function buildTools() {
     </div>
 
     <div class="tool wide">
-      <div class="tool-head"><div class="tool-ico">🎨</div><div><div class="tool-title">Direnç Renk Kodu Çözücü</div><div class="tool-formula">4 / 5 / 6 bant · gerçek zamanlı</div></div></div>
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--violet-soft);border-color:var(--violet)">🎨</div>
+        <div><div class="tool-title">Direnç Renk Kodu Çözücü</div><div class="tool-formula">4 / 5 / 6 bant &nbsp;·&nbsp; gerçek zamanlı</div></div>
+      </div>
       <div class="rc-layout">
         <div>
           <div class="rc-stage"><div id="rcSvg"></div></div>
@@ -239,7 +306,10 @@ function buildTools() {
     </div>
 
     <div class="tool wide">
-      <div class="tool-head"><div class="tool-ico">🎓</div><div><div class="tool-title">GANO Hesaplayıcı</div><div class="tool-formula">Σ(kredi·katsayı) / Σkredi</div></div></div>
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--spark-soft);border-color:var(--spark)">🎓</div>
+        <div><div class="tool-title">GANO Hesaplayıcı</div><div class="tool-formula">Σ(kredi·katsayı) / Σkredi</div></div>
+      </div>
       <div id="ganoRows"></div>
       <div style="display:flex; gap:10px; margin:14px 0">
         <button class="btn btn-soft btn-sm" onclick="ganoAddRow()">+ Ders ekle</button>
