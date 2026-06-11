@@ -610,7 +610,7 @@ function openDetail(id, silent) {
       <div class="detail-row"><span class="dr-label">Paylaşan</span>${avatarHTML(f.uid, 'sm')}<span>${esc(f.uname || profileOf(f.uid).name)}</span></div>
       <div class="detail-row"><span class="dr-label">Yüklenme</span><span>${timeAgo(f.t)}</span></div>
       <div class="detail-row"><span class="dr-label">İstatistik</span><span class="mono" style="font-size:13px">${likeCount(f)} beğeni · ${f.dls} indirme</span></div>
-      ${f.kind === 'link' ? `<div class="detail-row"><span class="dr-label">Bağlantı</span><a href="${f.url}" target="_blank" rel="noopener" style="color:var(--acc)">${esc(f.url)} ↗</a></div>` : `<div class="detail-row"><span class="dr-label">Dosya</span><span class="mono" style="font-size:13px">.${f.ext || 'pdf'}</span></div>`}
+      ${f.kind === 'link' ? `<div class="detail-row"><span class="dr-label">Bağlantı</span><a href="${f.url}" target="_blank" rel="noopener" style="color:var(--acc)">${esc(f.url)} ↗</a></div>` : `<div class="detail-row"><span class="dr-label">Dosya</span><span class="mono" style="font-size:13px">.${f.ext || 'pdf'}${f.size > 0 ? ' · ' + (f.size / 1048576).toFixed(2) + ' MB' : ''}</span></div>`}
     </div>
     ${previewHtml}
     <div class="detail-actions">

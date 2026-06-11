@@ -228,6 +228,7 @@ function _dbFileToLocal(row) {
     t:       new Date(row.created_at).getTime(),
     dls:     row.downloads || 0,
     likes:   0,
+    size:    row.size || 0,
     kind:    row.kind || 'file',
     url:     row.url  || undefined,
     ext:     row.file_name ? row.file_name.split('.').pop() : 'pdf',
