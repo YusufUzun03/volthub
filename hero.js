@@ -165,9 +165,9 @@ function initHeroVisual() {
       const g = ctx.createRadialGradient(x, y, 0, x, y, 7);
       g.addColorStop(0, COL.ink); g.addColorStop(1, 'transparent');
       ctx.globalAlpha = 0.5 * ef; ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.fill();
       ctx.globalAlpha = ef; ctx.fillStyle = COL.ink;
-      ctx.beginPath(); ctx.arc(x, y, 1.9, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, 1.9, 0, Math.PI * 2); ctx.fill();
     });
     ctx.globalAlpha = 1;
 
@@ -197,10 +197,10 @@ function initHeroVisual() {
     rr(x0 + bz * 0.55, y0 + bz * 0.55, chip - bz * 1.1, chip - bz * 1.1, cr * 0.7); ctx.stroke();
     // corner orientation notch + 4 mounting dots
     ctx.globalAlpha = 0.5; ctx.lineWidth = 1.3;
-    ctx.beginPath(); ctx.arc(x0 + bz * 0.95, y0 + bz * 0.95, chip * 0.02, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x0 + bz * 0.95, y0 + bz * 0.95, chip * 0.02, 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = 0.22;
     [[bz * 0.55, bz * 0.55], [chip - bz * 0.55, bz * 0.55], [bz * 0.55, chip - bz * 0.55], [chip - bz * 0.55, chip - bz * 0.55]].forEach(([dx, dy]) => {
-      ctx.beginPath(); ctx.arc(x0 + dx, y0 + dy, chip * 0.008, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(x0 + dx, y0 + dy, chip * 0.008, 0, Math.PI * 2); ctx.fill();
     });
     ctx.globalAlpha = 1;
 
@@ -237,7 +237,7 @@ function initHeroVisual() {
     const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, core.s * 1.7);
     cg.addColorStop(0, COL.ink); cg.addColorStop(1, 'transparent');
     ctx.globalAlpha = 0.08 + breathe * 0.14; ctx.fillStyle = cg;
-    ctx.beginPath(); ctx.arc(cx, cy, core.s * 1.7, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, core.s * 1.7, 0, Math.PI * 2); ctx.fill();
     // core plate
     ctx.globalAlpha = 0.5; ctx.fillStyle = COL.surf;
     rr(core.x, core.y, core.s, core.s, core.s * 0.16); ctx.fill();

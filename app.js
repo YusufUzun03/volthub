@@ -216,7 +216,7 @@ function sortFiles(files) {
   const arr = [...files];
   if (STATE.sort === 'new') arr.sort((a, b) => b.t - a.t);
   else if (STATE.sort === 'old') arr.sort((a, b) => a.t - b.t);
-  else if (STATE.sort === 'dl') arr.sort((a, b) => (b.dls + (STATE.likes.has(b.id) ? 0 : 0)) - a.dls);
+  else if (STATE.sort === 'dl') arr.sort((a, b) => b.dls - a.dls);
   else if (STATE.sort === 'like') arr.sort((a, b) => likeCount(b) - likeCount(a));
   return arr;
 }
@@ -671,7 +671,7 @@ async function openDetail(id, silent) {
     ${previewHtml}
     <div class="detail-actions">
       <button class="btn btn-primary" onclick="downloadFile('${f.id}')">${ICON.down} ${f.kind === 'link' ? 'Bağlantıyı Aç' : 'İndir'}</button>
-      <button class="btn btn-ghost" id="dLike" onclick="toggleLike('${f.id}')">${liked ? ICON.heartFill : ICON.heart} ${likeCount(f)}</button>
+      <button class="btn btn-ghost" id="dLike" onclick="toggleLike('${f.id}',this)">${liked ? ICON.heartFill : ICON.heart} ${likeCount(f)}</button>
       <button class="btn btn-ghost" onclick="toggleSave('${f.id}');openDetail('${f.id}',true)">${saved ? ICON.bookmarkFill : ICON.bookmark} ${saved ? 'Kaydedildi' : 'Kaydet'}</button>
     </div>
     <div class="comments-section" id="commentsSec">
