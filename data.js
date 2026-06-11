@@ -60,6 +60,7 @@ const AV_COLORS = {
   a1:'oklch(0.55 0.15 250)', a2:'oklch(0.58 0.14 155)', a3:'oklch(0.6 0.16 25)',
   a4:'oklch(0.56 0.15 295)', a5:'oklch(0.62 0.14 68)', a6:'oklch(0.5 0.13 200)',
   a7:'oklch(0.55 0.14 330)', a8:'oklch(0.45 0.04 260)',
+  admin:'oklch(0.70 0.22 82)',
 };
 
 // Küratörlü kaynaklar

@@ -69,9 +69,12 @@ const ICON = {
   user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
 };
 
+const ADMIN_COLOR = 'oklch(0.70 0.22 82)';
+
 function avatarHTML(uid, size = 'md') {
   const p = profileOf(uid);
-  const col = AV_COLORS[p.avatar] || AV_COLORS.a1;
+  const isAdmin = uid === 'me' && STATE.me.is_admin;
+  const col = isAdmin ? ADMIN_COLOR : (AV_COLORS[p.avatar] || AV_COLORS.a1);
   return `<div class="avatar ${size}" style="background:${col}">${esc((p.name || '?')[0])}</div>`;
 }
 
@@ -300,14 +303,16 @@ function renderLeaderboard() {
   })).sort((a, b) => b.score - a.score);
   document.getElementById('lbList').innerHTML = rows.map((p, i) => {
     const b = badgeFor(p.score);
-    const col = AV_COLORS[p.isMe ? STATE.me.avatar : (p.avatar || 'a1')] || AV_COLORS.a1;
+    const isAdmin = p.isMe ? STATE.me.is_admin : p.is_admin;
+    const col = isAdmin ? ADMIN_COLOR : (AV_COLORS[p.isMe ? STATE.me.avatar : (p.avatar || 'a1')] || AV_COLORS.a1);
     const av = `<div class="avatar md" style="background:${col}">${esc(((p.isMe ? STATE.me.name : p.name) || '?')[0])}</div>`;
+    const adminBadge = isAdmin ? `<span class="badge sm" style="color:oklch(0.48 0.18 75);border-color:oklch(0.70 0.22 82);background:oklch(0.96 0.07 85)"><span class="badge-ico">👑</span>Kurucu</span> ` : '';
     return `<div class="lb-row ${i === 0 ? 'top1' : ''} fade-up">
       <div class="lb-rank">${i + 1}</div>
       ${av}
       <div class="lb-info">
         <div class="lb-name">${esc(p.isMe ? STATE.me.name : p.name)}${p.isMe ? ' <span class="tag" style="font-size:9px;padding:2px 7px">sen</span>' : ''}</div>
-        <div class="lb-sub"><span class="badge sm" style="color:${b.color};border-color:${b.color};background:${b.soft}"><span class="badge-ico">${b.icon}</span>${b.name}</span> · ${p.year === 'mezun' ? 'Mezun' : p.year + '. sınıf'}</div>
+        <div class="lb-sub">${adminBadge}<span class="badge sm" style="color:${b.color};border-color:${b.color};background:${b.soft}"><span class="badge-ico">${b.icon}</span>${b.name}</span> · ${p.year === 'mezun' ? 'Mezun' : p.year + '. sınıf'}</div>
       </div>
       <div class="lb-bars">
         <div class="lb-bar"><div class="lb-bar-v">${p.uploads}</div><div class="lb-bar-l">yükleme</div></div>
@@ -437,14 +442,20 @@ function myStats() {
 
 function renderProfile() {
   if (!STATE.me.bio) STATE.me.bio = '';
+  const loggedIn = !!SB_USER;
+  const displayName = loggedIn ? STATE.me.name : 'Misafir Öğrenci';
+  const displayYear = loggedIn ? STATE.me.year : '?';
   const s = myStats();
-  setText('profileName', STATE.me.name);
-  setText('profileSub', 'Elektrik-Elektronik Müh. · ' + (STATE.me.year === 'mezun' ? 'Mezun' : STATE.me.year + '. Sınıf'));
+  setText('profileName', displayName);
+  setText('profileSub', 'Elektrik-Elektronik Müh. · ' + (displayYear === 'mezun' ? 'Mezun' : displayYear + '. Sınıf'));
 
   // badge
   const b = badgeFor(s.score);
+  const adminBadgeHtml = STATE.me.is_admin
+    ? `<span class="badge" style="color:oklch(0.48 0.18 75);border-color:oklch(0.70 0.22 82);background:oklch(0.96 0.07 85);font-weight:700"><span class="badge-ico">👑</span>Kurucu</span> `
+    : '';
   document.getElementById('profileBadge').innerHTML =
-    `<span class="badge" style="color:${b.color};border-color:${b.color};background:${b.soft}"><span class="badge-ico">${b.icon}</span>${b.name}</span>`;
+    adminBadgeHtml + `<span class="badge" style="color:${b.color};border-color:${b.color};background:${b.soft}"><span class="badge-ico">${b.icon}</span>${b.name}</span>`;
 
   // avatar (editable)
   document.getElementById('profileAvatar').innerHTML = avatarHTML('me', 'xl') + `<div class="av-cam">✎</div>`;
@@ -466,8 +477,10 @@ function renderProfile() {
   }
 
   // avatar picker (inside popover)
-  document.getElementById('avPick').innerHTML = Object.entries(AV_COLORS).map(([k, col]) =>
-    `<div class="av-opt ${STATE.me.avatar === k ? 'active' : ''}" style="background:${col}" onclick="setAvatar('${k}')">${esc(STATE.me.name[0])}</div>`).join('');
+  document.getElementById('avPick').innerHTML = Object.entries(AV_COLORS)
+    .filter(([k]) => k !== 'admin')
+    .map(([k, col]) =>
+      `<div class="av-opt ${STATE.me.avatar === k ? 'active' : ''}" style="background:${col}" onclick="setAvatar('${k}')">${esc(displayName[0])}</div>`).join('');
 
   // stats
   setText('myUploads', s.uploads);

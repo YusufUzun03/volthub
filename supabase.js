@@ -11,6 +11,24 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+function toTitleCase(str) {
+  return (str || '').replace(/\S+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase());
+}
+
+function validateName(name) {
+  if (!name || name.length < 2)  return 'İsim en az 2 karakter olmalı';
+  if (name.length > 60)          return 'İsim en fazla 60 karakter olabilir';
+  // Sadece harf (Türkçe dahil), boşluk, kısa çizgi ve kesme işareti
+  if (!/^[a-zA-ZğüşıöçĞÜŞİÖÇ\s'\-]+$/.test(name)) return 'İsim yalnızca harf içerebilir';
+  // En az iki farklı karakter (örn. "aaa" geçerli ama "a" değil — zaten uzunluk tutuyor)
+  // Hepsinin aynı harf olmasını engelle (örn. "aaaa")
+  if (/^(.)\1+$/.test(name.replace(/\s/g, ''))) return 'Geçerli bir isim gir';
+  // En az bir gerçek kelime (2+ harf)
+  const words = name.trim().split(/\s+/);
+  if (!words.some(w => w.replace(/['\-]/g, '').length >= 2)) return 'Geçerli bir isim gir';
+  return null;
+}
+
 /* ─── Auth state (readable from app.js) ─────────────────── */
 let SB_USER    = null;   // Supabase User object or null
 let SB_PROFILE = null;   // row from public.profiles or null
@@ -65,11 +83,12 @@ async function _onSignIn(user, showToast) {
   }
 
   STATE.me = {
-    id:     'me',
-    name:   SB_PROFILE?.name   || user.email.split('@')[0],
-    year:   SB_PROFILE?.year   || '1',
-    avatar: SB_PROFILE?.avatar || 'a1',
-    bio:    SB_PROFILE?.bio    || '',
+    id:       'me',
+    name:     toTitleCase(SB_PROFILE?.name   || user.email.split('@')[0]),
+    year:     SB_PROFILE?.year   || '1',
+    avatar:   SB_PROFILE?.avatar || 'a1',
+    bio:      SB_PROFILE?.bio    || '',
+    is_admin: SB_PROFILE?.is_admin || false,
   };
   LS.set('me', STATE.me);
 
@@ -80,13 +99,14 @@ async function _onSignIn(user, showToast) {
 
   _updateAuthUI(true);
   renderAll();
-  if (showToast) toast(`Hoş geldin, ${STATE.me.name.split(' ')[0]}! 👋`, '✅');
+  if (showToast) toast(`Hoş geldin, ${STATE.me.name.split(' ')[0]}!${STATE.me.is_admin ? ' 👑' : ' 👋'}`, '✅');
 }
 
 /* ─── Internal: signed out ───────────────────────────────── */
 function _onSignOut() {
   SB_USER = null; SB_PROFILE = null;
-  STATE.me      = LS.get('me', { id: 'me', name: 'Misafir Öğrenci', year: 3, avatar: 'a1' });
+  STATE.me = { id: 'me', name: 'Misafir Öğrenci', year: 3, avatar: 'a1' };
+  LS.set('me', STATE.me);
   STATE.myFiles = [];
   STATE.likes   = new Set(LS.get('likes', []));
   STATE.saves   = new Set(LS.get('saves', []));
@@ -97,6 +117,7 @@ function _onSignOut() {
   _updateAuthUI(false);
   if (typeof loadDbFiles === 'function') loadDbFiles();
   if (typeof loadDbLeaderboard === 'function') loadDbLeaderboard();
+  if (typeof goTo === 'function') goTo('anasayfa', false);
   renderAll();
   toast('Çıkış yapıldı', '👋');
 }
@@ -235,12 +256,13 @@ async function sbGetAllPublicFiles() {
 
 async function sbGetLeaderboard() {
   const { data, error } = await sb.from('profile_stats')
-    .select('id, name, year, avatar, upload_count, download_count, like_count')
+    .select('id, name, year, avatar, is_admin, upload_count, download_count, like_count')
     .order('upload_count', { ascending: false })
     .limit(50);
   if (error) return [];
   return (data || []).map(p => ({
     id: p.id, name: p.name, year: p.year, avatar: p.avatar || 'a1',
+    is_admin: p.is_admin || false,
     uploads: p.upload_count, dls: p.download_count, likes: p.like_count,
   }));
 }
@@ -400,11 +422,13 @@ async function doLogin() {
 }
 
 async function doRegister() {
-  const name     = document.getElementById('regName').value.trim();
+  const name     = toTitleCase(document.getElementById('regName').value.trim());
   const year     = document.getElementById('regYear').value;
   const email    = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
   if (!name || !email || !password) { toast('Tüm alanları doldur', '⚠️'); return; }
+  const nameErr = validateName(name);
+  if (nameErr) { toast(nameErr, '⚠️'); return; }
   if (password.length < 6) { toast('Şifre en az 6 karakter olmalı', '⚠️'); return; }
   const btn = document.querySelector('#registerForm .btn-primary');
   btn.disabled = true; btn.textContent = 'Kayıt yapılıyor…';
