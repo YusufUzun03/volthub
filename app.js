@@ -75,7 +75,8 @@ function avatarHTML(uid, size = 'md') {
   const p = profileOf(uid);
   const isAdmin = uid === 'me' && STATE.me.is_admin;
   const col = isAdmin ? ADMIN_COLOR : (AV_COLORS[p.avatar] || AV_COLORS.a1);
-  return `<div class="avatar ${size}" style="background:${col}">${esc((p.name || '?')[0])}</div>`;
+  const inner = isAdmin ? '⚡' : esc((p.name || '?')[0]);
+  return `<div class="avatar ${size}" style="background:${col};font-style:normal">${inner}</div>`;
 }
 
 /* ═══════════ NAVIGATION ═══════════ */
@@ -305,7 +306,7 @@ function renderLeaderboard() {
     const b = badgeFor(p.score);
     const isAdmin = p.isMe ? STATE.me.is_admin : p.is_admin;
     const col = isAdmin ? ADMIN_COLOR : (AV_COLORS[p.isMe ? STATE.me.avatar : (p.avatar || 'a1')] || AV_COLORS.a1);
-    const av = `<div class="avatar md" style="background:${col}">${esc(((p.isMe ? STATE.me.name : p.name) || '?')[0])}</div>`;
+    const av = `<div class="avatar md" style="background:${col};font-style:normal">${isAdmin ? '⚡' : esc(((p.isMe ? STATE.me.name : p.name) || '?')[0])}</div>`;
     const adminBadge = isAdmin ? `<span class="badge sm" style="color:oklch(0.48 0.18 75);border-color:oklch(0.70 0.22 82);background:oklch(0.96 0.07 85)"><span class="badge-ico">👑</span>Kurucu</span> ` : '';
     return `<div class="lb-row ${i === 0 ? 'top1' : ''} fade-up">
       <div class="lb-rank">${i + 1}</div>
