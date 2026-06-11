@@ -730,7 +730,7 @@ function renderCommentsList(comments, fileId) {
       <div class="avatar sm" style="background:${col};flex-shrink:0">${esc((c.user_name || '?')[0])}</div>
       <div class="comment-body">
         <div class="comment-meta">
-          <span class="comment-name">${esc(c.user_name || 'Anonim')}</span>
+          <span class="comment-name">${esc(toTitleCase(c.user_name) || 'Anonim')}</span>
           <span class="comment-time">${timeAgo(new Date(c.created_at).getTime())}</span>
           ${canDel ? `<button class="comment-del" onclick="deleteComment(${c.id},'${fileId}')">✕</button>` : ''}
         </div>

@@ -261,7 +261,7 @@ async function sbGetLeaderboard() {
     .limit(50);
   if (error) return [];
   return (data || []).map(p => ({
-    id: p.id, name: p.name, year: p.year, avatar: p.avatar || 'a1',
+    id: p.id, name: toTitleCase(p.name), year: p.year, avatar: p.avatar || 'a1',
     is_admin: p.is_admin || false,
     uploads: p.upload_count, dls: p.download_count, likes: p.like_count,
   }));
@@ -277,7 +277,7 @@ function _dbFileToLocal(row) {
     subtype: row.subtype || undefined,
     ders:    row.ders   || '',
     uid:     isMe ? 'me' : (row.uploader_id || 'unknown'),
-    uname:   row.uploader_name || '',
+    uname:   toTitleCase(row.uploader_name || ''),
     t:       new Date(row.created_at).getTime(),
     dls:     row.downloads || 0,
     likes:   0,
@@ -341,7 +341,7 @@ async function sbGetAllRequests() {
     text:     r.body,
     ders:     r.ders   || '',
     uid:      r.user_id,
-    uname:    r.user_name || '',
+    uname:    toTitleCase(r.user_name || ''),
     t:        new Date(r.created_at).getTime(),
     votes:    r.vote_count || 0,
     resolved: r.resolved,
