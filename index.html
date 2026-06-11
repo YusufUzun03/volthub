@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 </head>
 <body data-theme="light">
 
@@ -62,6 +63,14 @@
     <div class="sb-block">
       <div class="sb-head" onclick="toggleSb(this)">Dersler <span class="chev">▾</span></div>
       <div class="sb-body" id="sbCourses"></div>
+    </div>
+    <div class="sb-block">
+      <div class="sb-head" onclick="toggleSb(this)">Yıl <span class="chev">▾</span></div>
+      <div class="sb-body" id="sbYear"></div>
+    </div>
+    <div class="sb-block">
+      <div class="sb-head" onclick="toggleSb(this)">Uzantı <span class="chev">▾</span></div>
+      <div class="sb-body" id="sbExt"></div>
     </div>
   </aside>
 

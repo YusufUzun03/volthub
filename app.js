@@ -21,6 +21,8 @@ const STATE = {
   ders: null,
   sort: 'new',
   page: 'anasayfa',
+  yearFilter: null,
+  extFilter:  null,
 };
 
 let DB_REQS = [];
@@ -117,18 +119,58 @@ function renderSidebar() {
       </div>`;
     }).join('')}
   `).join('');
+
+  // year filter
+  const years = [...new Set(files.map(f => new Date(f.t).getFullYear()))].sort((a, b) => b - a);
+  const sbYear = document.getElementById('sbYear');
+  if (sbYear) {
+    sbYear.innerHTML = [
+      `<div class="sb-item ${!STATE.yearFilter ? 'active' : ''}" onclick="setYearFilter(null)"><span class="si-ico">📅</span><span class="si-name">Tüm Yıllar</span></div>`,
+      ...years.map(y => `<div class="sb-item ${STATE.yearFilter === y ? 'active' : ''}" onclick="setYearFilter(${y})">
+        <span class="si-ico">📅</span><span class="si-name">${y}</span>
+        <span class="sb-count">${files.filter(f => new Date(f.t).getFullYear() === y).length}</span>
+      </div>`),
+    ].join('');
+  }
+
+  // extension filter
+  const EXT_GROUPS = [
+    { k: 'pdf', ic: '📄', label: 'PDF',    exts: ['pdf'] },
+    { k: 'doc', ic: '📝', label: 'Word',   exts: ['doc','docx'] },
+    { k: 'ppt', ic: '📊', label: 'Sunum',  exts: ['ppt','pptx'] },
+    { k: 'img', ic: '🖼️', label: 'Resim', exts: ['png','jpg','jpeg','gif','webp','svg'] },
+  ];
+  const sbExt = document.getElementById('sbExt');
+  if (sbExt) {
+    sbExt.innerHTML = [
+      `<div class="sb-item ${!STATE.extFilter ? 'active' : ''}" onclick="setExtFilter(null)"><span class="si-ico">📋</span><span class="si-name">Tüm Uzantılar</span></div>`,
+      ...EXT_GROUPS.map(g => {
+        const c = files.filter(f => g.exts.includes(f.ext)).length;
+        if (!c) return '';
+        return `<div class="sb-item ${STATE.extFilter === g.k ? 'active' : ''}" onclick="setExtFilter('${g.k}')">
+          <span class="si-ico">${g.ic}</span><span class="si-name">${g.label}</span><span class="sb-count">${c}</span>
+        </div>`;
+      }),
+    ].join('');
+  }
 }
 function shortName(n) { return n.length > 22 ? n.slice(0, 20) + '…' : n; }
 
 function setFilter(t) { STATE.filter = t; STATE.ders = null; goTo('anasayfa', false); renderSidebar(); renderArchive(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function setDers(id) { STATE.ders = id; STATE.filter = 'hepsi'; goTo('anasayfa', false); renderSidebar(); renderArchive(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function setSort(s) { STATE.sort = s; renderArchive(); }
+function setYearFilter(y) { STATE.yearFilter = y; renderSidebar(); renderArchive(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function setExtFilter(e) { STATE.extFilter = e; renderSidebar(); renderArchive(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 /* ═══════════ ARCHIVE (main feed) ═══════════ */
+const EXT_MAP = { pdf:['pdf'], doc:['doc','docx'], ppt:['ppt','pptx'], img:['png','jpg','jpeg','gif','webp','svg'] };
+
 function renderArchive() {
   let files = allFiles();
-  if (STATE.ders) files = files.filter(f => f.ders === STATE.ders);
+  if (STATE.ders)       files = files.filter(f => f.ders === STATE.ders);
   if (STATE.filter !== 'hepsi') files = files.filter(f => f.type === STATE.filter);
+  if (STATE.yearFilter) files = files.filter(f => new Date(f.t).getFullYear() === STATE.yearFilter);
+  if (STATE.extFilter)  files = files.filter(f => (EXT_MAP[STATE.extFilter] || []).includes(f.ext));
   files = sortFiles(files);
 
   // ders detail header
@@ -571,7 +613,7 @@ async function toggleSave(id) {
 function burst(el) { if (el) { el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1)' }], { duration: 320, easing: 'cubic-bezier(.34,1.56,.64,1)' }); } }
 
 /* ═══════════ DETAIL MODAL ═══════════ */
-function openDetail(id, silent) {
+async function openDetail(id, silent) {
   const f = allFiles().find(x => x.id === id);
   if (!f) return;
   const d = dersOf(f.ders);
@@ -617,8 +659,101 @@ function openDetail(id, silent) {
       <button class="btn btn-primary" onclick="downloadFile('${f.id}')">${ICON.down} ${f.kind === 'link' ? 'Bağlantıyı Aç' : 'İndir'}</button>
       <button class="btn btn-ghost" id="dLike" onclick="toggleLike('${f.id}')">${liked ? ICON.heartFill : ICON.heart} ${likeCount(f)}</button>
       <button class="btn btn-ghost" onclick="toggleSave('${f.id}');openDetail('${f.id}',true)">${saved ? ICON.bookmarkFill : ICON.bookmark} ${saved ? 'Kaydedildi' : 'Kaydet'}</button>
+    </div>
+    <div class="comments-section" id="commentsSec">
+      <div class="comments-head">💬 Yorumlar</div>
+      <div id="commentsList"><div class="loading" style="padding:20px 0">Yorumlar yükleniyor…</div></div>
+      ${SB_USER ? `
+        <div class="comment-form">
+          <div class="comment-input-row">
+            ${avatarHTML('me', 'sm')}
+            <textarea class="input comment-textarea" id="commentInput" placeholder="Yorum ekle…" maxlength="500" rows="2"
+              onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey))submitComment('${f.id}')"></textarea>
+          </div>
+          <div style="text-align:right;margin-top:8px">
+            <button class="btn btn-primary btn-sm" onclick="submitComment('${f.id}')">Gönder</button>
+          </div>
+        </div>` :
+        `<div class="comment-login">Yorum yazmak için <a href="#" onclick="closeDetail();openAuth();return false" style="color:var(--acc)">giriş yap</a></div>`
+      }
     </div>`;
+
   if (!silent) document.getElementById('detailOverlay').classList.add('open');
+
+  // Load comments async
+  if (f.fromDB) {
+    try {
+      const comments = await sbGetComments(f.id);
+      renderCommentsList(comments, f.id);
+    } catch {
+      const el = document.getElementById('commentsList');
+      if (el) el.innerHTML = '';
+    }
+  } else {
+    const el = document.getElementById('commentsList');
+    if (el) el.innerHTML = '';
+  }
+}
+
+/* ─── Comments ─── */
+function nameColor(name) {
+  const keys = Object.keys(AV_COLORS);
+  const idx = (name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % keys.length;
+  return AV_COLORS[keys[idx]];
+}
+
+function renderCommentsList(comments, fileId) {
+  const el = document.getElementById('commentsList');
+  if (!el) return;
+  if (!comments.length) {
+    el.innerHTML = '<div class="comment-empty">Henüz yorum yok. İlk yorumu sen yaz!</div>';
+    return;
+  }
+  el.innerHTML = comments.map(c => {
+    const col = nameColor(c.user_name);
+    const canDel = SB_USER && (c.user_id === SB_USER.id || SB_PROFILE?.is_admin);
+    return `<div class="comment" id="cmt-${c.id}">
+      <div class="avatar sm" style="background:${col};flex-shrink:0">${esc((c.user_name || '?')[0])}</div>
+      <div class="comment-body">
+        <div class="comment-meta">
+          <span class="comment-name">${esc(c.user_name || 'Anonim')}</span>
+          <span class="comment-time">${timeAgo(new Date(c.created_at).getTime())}</span>
+          ${canDel ? `<button class="comment-del" onclick="deleteComment(${c.id},'${fileId}')">✕</button>` : ''}
+        </div>
+        <div class="comment-text">${esc(c.body)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function submitComment(fileId) {
+  if (!SB_USER) { openAuth(); return; }
+  const input = document.getElementById('commentInput');
+  const body  = input?.value.trim();
+  if (!body) { toast('Yorum boş olamaz', '⚠️'); return; }
+  const btn = document.querySelector('#commentsSec .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    await sbAddComment(fileId, body);
+    if (input) input.value = '';
+    const comments = await sbGetComments(fileId);
+    renderCommentsList(comments, fileId);
+  } catch (e) {
+    toast('Hata: ' + (e.message || 'Bilinmeyen'), '❌');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Gönder'; }
+  }
+}
+
+async function deleteComment(commentId, fileId) {
+  try {
+    await sbDeleteComment(commentId);
+    document.getElementById('cmt-' + commentId)?.remove();
+    const el = document.getElementById('commentsList');
+    if (el && !el.querySelector('.comment')) {
+      el.innerHTML = '<div class="comment-empty">Henüz yorum yok. İlk yorumu sen yaz!</div>';
+    }
+  } catch { toast('Hata', '❌'); }
 }
 function closeDetail() { document.getElementById('detailOverlay').classList.remove('open'); }
 async function downloadFile(id) {
@@ -636,6 +771,28 @@ async function downloadFile(id) {
     }
   }
   toast('İndirme bağlantısı bulunamadı', '❌');
+}
+
+/* ═══════════ PDF TEXT EXTRACTION ═══════════ */
+async function extractPdfText(file) {
+  if (!window.pdfjsLib) return '';
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    const maxPages = Math.min(pdf.numPages, 15);
+    let text = '';
+    for (let i = 1; i <= maxPages; i++) {
+      const page    = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(item => item.str).join(' ') + '\n';
+    }
+    return text.slice(0, 60000).trim();
+  } catch (e) {
+    console.warn('PDF text extraction:', e);
+    return '';
+  }
 }
 
 /* ═══════════ IMAGE COMPRESSION ═══════════ */
@@ -732,6 +889,14 @@ async function submitUpload() {
   const submitBtn = document.querySelector('#uploadOverlay .btn-primary');
   if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Yükleniyor…'; }
 
+  // Extract PDF text for full-text search
+  let contentText = '';
+  if (!isLink && pendingFile?.name?.toLowerCase().endsWith('.pdf')) {
+    submitBtn && (submitBtn.textContent = 'Metin çıkarılıyor…');
+    contentText = await extractPdfText(pendingFile);
+    submitBtn && (submitBtn.textContent = 'Yükleniyor…');
+  }
+
   const meta = {
     title, ders, type,
     subtype: document.getElementById('upSubtype').value || undefined,
@@ -739,6 +904,7 @@ async function submitUpload() {
     tags:    document.getElementById('upTags').value.split(',').map(t => t.trim()).filter(Boolean),
     kind:    isLink ? 'link' : 'file',
     url:     isLink ? url : undefined,
+    contentText,
   };
 
   try {
@@ -758,23 +924,52 @@ function onTypeChange() {
 }
 
 /* ═══════════ SEARCH ═══════════ */
+let _contentSearchTimer = null;
+
 function handleSearch(q) {
   q = q.trim().toLowerCase();
   const box = document.getElementById('searchResults');
   if (!q) { box.innerHTML = ''; box.style.display = 'none'; document.getElementById('mainPages').style.display = ''; return; }
   document.getElementById('mainPages').style.display = 'none';
   box.style.display = 'block';
+
   const files = allFiles().filter(f =>
     f.title.toLowerCase().includes(q) || (f.desc || '').toLowerCase().includes(q) ||
     (f.tags || []).some(t => t.toLowerCase().includes(q)) ||
     (dersOf(f.ders) && (dersOf(f.ders).name.toLowerCase().includes(q) || dersOf(f.ders).code.toLowerCase().replace(/\s/g, '').includes(q.replace(/\s/g, '')))));
   const courses = DERSLER.filter(d => d.name.toLowerCase().includes(q) || d.code.toLowerCase().replace(/\s/g, '').includes(q.replace(/\s/g, '')));
+  const foundIds = new Set(files.map(f => f.id));
+
   let html = `<div class="container" style="padding-top:30px"><div class="sec-head"><div><div class="eyebrow">Arama</div><h2 class="sec-title" style="margin-top:10px">"${esc(q)}" için sonuçlar</h2></div><button class="btn btn-ghost btn-sm" onclick="clearSearch()">✕ Temizle</button></div>`;
   if (courses.length) html += `<div class="sec-sub" style="margin-bottom:12px">Dersler (${courses.length})</div><div class="dgrid" style="margin-bottom:30px">${courses.map(d => `<div class="dcard" onclick="setDers('${d.id}');clearSearch()"><div class="dcard-head"><div class="dcard-ico" style="background:oklch(0.95 0.04 ${d.tint})">${d.icon}</div><div class="dcard-code">${d.code}</div></div><div class="dcard-name">${esc(d.name)}</div></div>`).join('')}</div>`;
   html += `<div class="sec-sub" style="margin-bottom:12px">Kaynaklar (${files.length})</div>`;
   html += files.length ? `<div class="rgrid">${files.map(cardHTML).join('')}</div>` : `<div class="empty"><div class="empty-ico">🔍</div><div class="empty-title">Sonuç bulunamadı</div><div class="empty-sub">Farklı bir anahtar kelime ya da ders kodu (örn. EE 211) dene.</div></div>`;
-  html += `</div>`;
+  html += `<div id="contentMatchResults"></div></div>`;
   box.innerHTML = html;
+
+  // Async PDF content search (debounced, min 3 chars)
+  if (_contentSearchTimer) clearTimeout(_contentSearchTimer);
+  if (q.length >= 3) {
+    _contentSearchTimer = setTimeout(() => searchPdfContent(q, foundIds), 500);
+  }
+}
+
+async function searchPdfContent(q, alreadyFoundIds) {
+  const el = document.getElementById('contentMatchResults');
+  if (!el) return;
+  try {
+    const { data } = await sb.from('files')
+      .select('id')
+      .ilike('content_text', `%${q}%`)
+      .limit(20);
+    if (!data?.length) return;
+    if (!document.getElementById('contentMatchResults')) return;
+    const extras = DB_FILES.filter(f => data.some(r => String(r.id) === f.id) && !alreadyFoundIds.has(f.id));
+    if (extras.length) {
+      el.innerHTML = `<div class="sec-sub" style="margin:24px 0 12px">📄 PDF içinde bulundu (${extras.length})</div>
+        <div class="rgrid">${extras.map(cardHTML).join('')}</div>`;
+    }
+  } catch {}
 }
 function clearSearch() {
   ['searchInput', 'searchInput2'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });

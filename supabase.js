@@ -172,9 +172,40 @@ async function sbInsertFile(meta, fileBlob) {
     url:           meta.url || null,
     kind:          meta.kind,
     visibility:    'public',
+    content_text:  meta.contentText || '',
   }).select().single();
   if (error) throw error;
   return _dbFileToLocal(data);
+}
+
+/* ═══════════ COMMENTS ════════════════════════════════════ */
+async function sbGetComments(fileId) {
+  const numId = parseInt(fileId, 10);
+  if (isNaN(numId)) return [];
+  const { data, error } = await sb.from('comments')
+    .select('*')
+    .eq('file_id', numId)
+    .order('created_at', { ascending: true });
+  if (error) return [];
+  return data || [];
+}
+
+async function sbAddComment(fileId, body) {
+  const numId = parseInt(fileId, 10);
+  if (isNaN(numId)) throw new Error('Geçersiz dosya');
+  const { data, error } = await sb.from('comments').insert({
+    file_id:   numId,
+    user_id:   SB_USER.id,
+    user_name: STATE.me.name,
+    body:      body.trim(),
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function sbDeleteComment(commentId) {
+  const { error } = await sb.from('comments').delete().eq('id', commentId);
+  if (error) throw error;
 }
 
 async function sbBumpDownload(fileId) {
