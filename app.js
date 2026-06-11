@@ -638,6 +638,31 @@ async function downloadFile(id) {
   toast('İndirme bağlantısı bulunamadı', '❌');
 }
 
+/* ═══════════ IMAGE COMPRESSION ═══════════ */
+async function compressImageFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['png', 'jpg', 'jpeg', 'webp'].includes(ext)) return file;
+  return new Promise(resolve => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 1920;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        blob => resolve(blob ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }) : file),
+        'image/jpeg', 0.82
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 /* ═══════════ UPLOAD MODAL ═══════════ */
 let pendingFile = null;
 function openUpload() {
@@ -658,8 +683,12 @@ function setUpKind(k) {
   document.getElementById('filePreview').style.display = 'none';
   document.getElementById('linkWrap').style.display = k === 'link' ? '' : 'none';
 }
-function fileSelected(file) {
+async function fileSelected(file) {
   if (!file) return;
+  const MAX_MB = 20;
+  if (file.size > MAX_MB * 1024 * 1024) { toast(`Dosya ${MAX_MB} MB'dan küçük olmalı`, '⚠️'); return; }
+
+  // Show chip immediately
   pendingFile = file;
   document.getElementById('dropZone').style.display = 'none';
   const fp = document.getElementById('filePreview');
@@ -667,6 +696,20 @@ function fileSelected(file) {
   document.getElementById('fpName').textContent = file.name;
   document.getElementById('fpSize').textContent = (file.size / 1048576).toFixed(2) + ' MB';
   if (!document.getElementById('upTitle').value) document.getElementById('upTitle').value = file.name.replace(/\.[^.]+$/, '');
+
+  // Compress images in background
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
+    document.getElementById('fpSize').textContent = 'Sıkıştırılıyor…';
+    const compressed = await compressImageFile(file);
+    pendingFile = compressed;
+    const origMB = (file.size / 1048576).toFixed(2);
+    const compMB = (compressed.size / 1048576).toFixed(2);
+    const saved  = Math.round((1 - compressed.size / file.size) * 100);
+    document.getElementById('fpSize').textContent = saved > 5
+      ? `${compMB} MB  ·  ${origMB} MB'dan ${saved}% küçültüldü ✓`
+      : `${compMB} MB`;
+  }
 }
 function clearFile() { pendingFile = null; document.getElementById('filePreview').style.display = 'none'; document.getElementById('dropZone').style.display = ''; }
 function dragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag'); }
