@@ -451,6 +451,15 @@ nav {
 .rc-ohm { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--acc); letter-spacing: -.03em; }
 .rc-range { font-size: 11px; color: var(--ink-3); margin-top: 7px; line-height: 1.65; }
 
+/* schematic layout */
+.scm-layout { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start; }
+.scm-stage {
+  display: grid; place-items: center; padding: 20px 14px;
+  background: radial-gradient(ellipse at 50% 38%, var(--surface) 0%, var(--paper-2) 100%);
+  border: 1px solid var(--line); border-radius: var(--r-md); min-height: 120px;
+}
+@media (max-width: 700px) { .scm-layout { grid-template-columns: 1fr; } }
+
 /* gano */
 .gano-row { display: grid; grid-template-columns: 1fr 86px 100px 38px; gap: 10px; align-items: center; margin-bottom: 10px; }
 .gano-out { display: flex; align-items: baseline; gap: 10px; }

@@ -247,8 +247,282 @@ function drawResistor(bands) {
 </svg>`;
 }
 
+/* ═══════════ SVG SCHEMATIC HELPERS ═══════════ */
+const SC = {
+  w:  (x1,y1,x2,y2,c='var(--ink)')=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>`,
+  res:(cx,cy,lbl='',sub='',w=42,h=22)=>{const[x,y]=[cx-w/2,cy-h/2];return`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="var(--surface)" stroke="var(--acc)" stroke-width="1.5"/><text x="${cx}" y="${sub?cy-2:cy+4}" text-anchor="middle" font-size="9" font-weight="600" fill="var(--ink-2)" font-family="var(--sans)">${lbl}</text>${sub?`<text x="${cx}" y="${cy+9}" text-anchor="middle" font-size="8" fill="var(--ink-3)" font-family="var(--mono)">${sub}</text>`:''}`},
+  cap:(cx,cy,lbl='',sub='')=>`<line x1="${cx}" y1="${cy-16}" x2="${cx}" y2="${cy-5}" stroke="var(--ink)" stroke-width="1.5"/><line x1="${cx-13}" y1="${cy-5}" x2="${cx+13}" y2="${cy-5}" stroke="var(--acc)" stroke-width="2.5"/><line x1="${cx-13}" y1="${cy+5}" x2="${cx+13}" y2="${cy+5}" stroke="var(--acc)" stroke-width="2.5"/><line x1="${cx}" y1="${cy+5}" x2="${cx}" y2="${cy+16}" stroke="var(--ink)" stroke-width="1.5"/>${lbl?`<text x="${cx+18}" y="${cy}" text-anchor="start" font-size="9" font-weight="600" fill="var(--ink-2)" font-family="var(--sans)">${lbl}</text>`:''} ${sub?`<text x="${cx+18}" y="${cy+11}" text-anchor="start" font-size="8" fill="var(--ink-3)" font-family="var(--mono)">${sub}</text>`:''}`,
+  ind:(cx,cy,lbl='',sub='')=>{let a='';for(let i=0;i<3;i++)a+=`<path d="M${cx-15+i*10},${cy} a5,5 0 0,1 10,0" fill="none" stroke="var(--acc)" stroke-width="1.8"/>`;return`<line x1="${cx-20}" y1="${cy}" x2="${cx-15}" y2="${cy}" stroke="var(--ink)" stroke-width="1.5"/>${a}<line x1="${cx+15}" y1="${cy}" x2="${cx+20}" y2="${cy}" stroke="var(--ink)" stroke-width="1.5"/>${lbl?`<text x="${cx}" y="${cy-14}" text-anchor="middle" font-size="9" font-weight="600" fill="var(--ink-2)" font-family="var(--sans)">${lbl}</text>`:''} ${sub?`<text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="8" fill="var(--ink-3)" font-family="var(--mono)">${sub}</text>`:''}`;},
+  vs: (cx,cy,lbl='')=>`<circle cx="${cx}" cy="${cy}" r="16" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/><text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="12" fill="var(--green)">+</text><text x="${cx}" y="${cy+10}" text-anchor="middle" font-size="12" fill="var(--red)">−</text>${lbl?`<text x="${cx}" y="${cy-22}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--acc)" font-family="var(--sans)">${lbl}</text>`:''}`,
+  gnd:(x,y)=>`<line x1="${x-14}" y1="${y}" x2="${x+14}" y2="${y}" stroke="var(--ink)" stroke-width="2"/><line x1="${x-9}" y1="${y+5}" x2="${x+9}" y2="${y+5}" stroke="var(--ink)" stroke-width="1.5"/><line x1="${x-4}" y1="${y+10}" x2="${x+4}" y2="${y+10}" stroke="var(--ink)" stroke-width="1"/>`,
+  dot:(x,y,c='var(--acc)')=>`<circle cx="${x}" cy="${y}" r="3.5" fill="${c}"/>`,
+  txt:(x,y,t,c='var(--ink)',a='middle',s=11)=>`<text x="${x}" y="${y}" text-anchor="${a}" font-size="${s}" fill="${c}" font-family="var(--sans)">${t}</text>`,
+  mono:(x,y,t,c='var(--ink-3)',a='middle',s=10)=>`<text x="${x}" y="${y}" text-anchor="${a}" font-size="${s}" fill="${c}" font-family="var(--mono)">${t}</text>`,
+};
+function scRender(id,W,H,body){const el=document.getElementById(id);if(el)el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto">${body}</svg>`;}
+
+/* ── Draw: Voltaj Bölücü ── */
+function drawVdiv(){
+  const Vin=parseFloat(v('vdVin')),R1=parseFloat(v('vdR1')),R2=parseFloat(v('vdR2'));
+  const Vo=(!isNaN(Vin)&&!isNaN(R1)&&!isNaN(R2)&&R1+R2>0)?Vin*R2/(R1+R2):null;
+  const cx=75;
+  scRender('vdSvg',200,190,`
+    ${SC.txt(cx,13,!isNaN(Vin)?fmtNum(Vin)+' V':'Vin','var(--acc)')}
+    ${SC.w(cx,15,cx,43)}
+    ${SC.res(cx,55,'R1',!isNaN(R1)?fmtOhm(R1):'')}
+    ${SC.w(cx,67,cx,90)}
+    ${SC.dot(cx,90)}
+    ${SC.w(cx,90,cx+60,90)}
+    ${SC.txt(cx+64,94,Vo!==null?fmtNum(Vo)+' V':'Vout','var(--green)','start')}
+    ${SC.w(cx,91,cx,109)}
+    ${SC.res(cx,120,'R2',!isNaN(R2)?fmtOhm(R2):'')}
+    ${SC.w(cx,132,cx,155)}
+    ${SC.gnd(cx,157)}
+  `);
+}
+
+/* ── Draw: LED ── */
+function drawLed(){
+  const Vs=parseFloat(v('ledVs')),Vf=parseFloat(v('ledVf')),If=parseFloat(v('ledIf'));
+  const R=(!isNaN(Vs)&&!isNaN(Vf)&&!isNaN(If)&&If>0&&Vs>Vf)?(Vs-Vf)/(If/1000):null;
+  const cx=80,lY=168;
+  scRender('ledSvg',200,250,`
+    ${SC.vs(cx,36,!isNaN(Vs)?fmtNum(Vs)+' V':'Vs')}
+    ${SC.w(cx,52,cx,68)}
+    ${SC.res(cx,80,'R',R?fmtOhm(R):'?')}
+    ${!isNaN(If)?SC.mono(cx+26,82,fmtNum(If)+' mA','var(--green)','start',9):''}
+    ${SC.w(cx,92,cx,lY-14)}
+    <polygon points="${cx-14},${lY-14} ${cx+14},${lY-14} ${cx},${lY+8}" fill="var(--spark-soft)" stroke="var(--spark)" stroke-width="1.5"/>
+    <line x1="${cx-15}" y1="${lY+8}" x2="${cx+15}" y2="${lY+8}" stroke="var(--spark)" stroke-width="2.5"/>
+    <line x1="${cx+16}" y1="${lY-8}" x2="${cx+26}" y2="${lY-22}" stroke="var(--spark)" stroke-width="1.2" stroke-linecap="round"/>
+    <line x1="${cx+22}" y1="${lY-2}" x2="${cx+32}" y2="${lY-16}" stroke="var(--spark)" stroke-width="1.2" stroke-linecap="round"/>
+    ${!isNaN(Vf)?SC.mono(cx-18,lY,'Vf='+fmtNum(Vf)+'V','var(--spark)','end',9):''}
+    ${SC.w(cx,lY+8,cx,218)}
+    ${SC.gnd(cx,220)}
+  `);
+}
+
+/* ── Draw: RC/RL ── */
+function drawTau(){
+  const R=parseFloat(v('tauR')),C=parseFloat(v('tauC')),L=parseFloat(v('tauL'));
+  const hasC=!isNaN(C)&&C>0, hasL=!isNaN(L)&&L>0, showL=hasL&&!hasC;
+  const fmtT=t=>t>=1?fmtNum(t)+' s':t>=0.001?fmtNum(t*1000)+' ms':fmtNum(t*1e6)+' µs';
+  const tau=showL&&!isNaN(R)&&R>0?(L/1000)/R:(!isNaN(R)&&R>0&&hasC?R*C/1e6:null);
+  const W=260,H=110,cy=62;
+  const comp=showL?SC.ind(175,cy,'L',hasL?fmtNum(L)+' mH':''):SC.cap(175,cy,'C',hasC?fmtNum(C)+' µF':'');
+  scRender('tauSvg',W,H,`
+    ${tau?SC.txt(W/2,14,'τ = '+fmtT(tau),'var(--acc)'):SC.txt(W/2,14,'τ = R·'+(showL?'L/R':'C'),'var(--ink-3)')}
+    ${SC.vs(22,cy)}
+    ${SC.w(22,cy-16,22,22)}${SC.w(22,22,238,22)}${SC.w(238,22,238,cy)}
+    ${SC.w(238,cy,196,cy)}
+    ${comp}
+    ${SC.w(154,cy,113,cy)}
+    ${SC.res(92,cy,'R',!isNaN(R)?fmtOhm(R):'')}
+    ${SC.w(71,cy,38,cy)}
+    ${SC.w(22,cy+16,22,H-8)}${SC.w(22,H-8,238,H-8)}
+    ${SC.gnd(130,H-6)}
+  `);
+}
+
+/* ── Draw: dB ── */
+function drawDb(){
+  const ratio=parseFloat(v('dbRatio')),db=parseFloat(v('dbDb'));
+  const factor=DB_MODE==='v'?20:10;
+  const hasRatio=!isNaN(ratio)&&ratio>0, hasDb=!isNaN(db);
+  const inVal=hasRatio?fmtNum(ratio):hasDb?fmtNum(Math.pow(10,db/factor)):'A';
+  const outVal=hasRatio?fmtNum(factor*Math.log10(ratio))+' dB':hasDb?fmtNum(db)+' dB':'B·dB';
+  const W=220,H=100,bX=75,bY=28,bW=70,bH=44;
+  scRender('dbSvg',W,H,`
+    ${SC.txt(35,H/2+4,inVal,'var(--ink)','middle',11)}
+    ${SC.w(55,H/2,bX,H/2)}
+    <polygon points="${bX-6},${H/2-5} ${bX},${H/2} ${bX-6},${H/2+5}" fill="var(--acc)"/>
+    <rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" rx="6" fill="var(--acc-soft)" stroke="var(--acc)" stroke-width="1.5"/>
+    ${SC.txt(bX+bW/2,bY+bH/2-4,DB_MODE==='v'?'×20·log':'×10·log','var(--acc-ink)','middle',9)}
+    ${SC.txt(bX+bW/2,bY+bH/2+8,'Kazanç Bloğu','var(--ink-3)','middle',8)}
+    ${SC.w(bX+bW,H/2,W-55,H/2)}
+    <polygon points="${W-54},${H/2-5} ${W-48},${H/2} ${W-54},${H/2+5}" fill="var(--acc)"/>
+    ${SC.txt(W-30,H/2+4,outVal,'var(--green)','middle',11)}
+  `);
+}
+
+/* ── Draw: Op-Amp ── */
+function drawOpamp(){
+  const Rf=parseFloat(v('opRf')),R1=parseFloat(v('opR1'));
+  const Av=(!isNaN(Rf)&&!isNaN(R1)&&R1>0)?(OP_MODE==='inv'?-(Rf/R1):1+Rf/R1):null;
+  const W=280,H=185,ox=148,oy=95; // op-amp triangle tip at (ox+50,oy)
+  // triangle: left edge (ox,oy-32) to (ox,oy+32), tip (ox+50,oy)
+  const inv=OP_MODE==='inv';
+  // pin positions
+  const pinMinus=[ox,oy-16], pinPlus=[ox,oy+16], pinOut=[ox+50,oy];
+  // inv: R1 from (20,oy-16) to pinMinus; Rf from pinOut arcs back to pinMinus junction
+  const r1X1=18, r1Y=oy-16, r1CX=60, jX=100; // junction where R1 meets inv input wire
+  const rfTopY=28;
+  scRender('opSvg',W,H,`
+    <!-- Op-amp body -->
+    <polygon points="${ox},${oy-32} ${ox},${oy+32} ${ox+50},${oy}" fill="var(--acc-soft)" stroke="var(--acc)" stroke-width="2"/>
+    <text x="${ox+14}" y="${oy-8}" font-size="10" fill="var(--acc-ink)" font-family="var(--sans)">−</text>
+    <text x="${ox+14}" y="${oy+18}" font-size="10" fill="var(--acc-ink)" font-family="var(--sans)">+</text>
+    ${Av!==null?SC.txt(ox+25,oy+5,'Av='+fmtNum(Av),'var(--acc)','middle',9):''}
+
+    ${inv ? `
+    <!-- Inverting: Vin─R1─junctionNode─R2─(-)pin, Rf from junction back from output -->
+    ${SC.txt(r1X1,r1Y+4,'Vin','var(--ink)','start',10)}
+    ${SC.w(r1X1+22,r1Y,r1CX-21,r1Y)}
+    ${SC.res(r1CX,r1Y,'R1',!isNaN(R1)?fmtOhm(R1):'')}
+    ${SC.w(r1CX+21,r1Y,jX,r1Y)}
+    ${SC.dot(jX,r1Y)}
+    ${SC.w(jX,r1Y,ox,r1Y)}
+    <!-- Rf feedback arc over top -->
+    ${SC.w(jX,r1Y,jX,rfTopY)}
+    ${SC.res(165,rfTopY,'Rf',!isNaN(Rf)?fmtOhm(Rf):'')}
+    ${SC.w(jX,rfTopY,120,rfTopY)}
+    ${SC.w(186,rfTopY,pinOut[0]+20,rfTopY)}
+    ${SC.w(pinOut[0]+20,rfTopY,pinOut[0]+20,oy)}
+    ${SC.dot(pinOut[0]+20,oy)}
+    <!-- (+) to GND -->
+    ${SC.w(ox,oy+16,ox-16,oy+16)}${SC.gnd(ox-20,oy+18)}
+    ` : `
+    <!-- Non-inverting: Vin─(+)pin, R1 from (-)─GND, Rf from (-)─output -->
+    ${SC.txt(18,oy+20,'Vin','var(--ink)','start',10)}
+    ${SC.w(40,oy+16,ox,oy+16)}
+    <!-- R1 from (-) to GND -->
+    ${SC.w(ox,oy-16,ox-20,oy-16)}${SC.w(ox-20,oy-16,ox-20,rfTopY)}
+    ${SC.res(ox-20,rfTopY,'R1',!isNaN(R1)?fmtOhm(R1):'',42,22)}
+    ${SC.w(ox-20,rfTopY+11,ox-20,20)}${SC.gnd(ox-20,22)}
+    <!-- Rf from output back to (-) junction -->
+    ${SC.dot(ox-20,oy-16)}
+    ${SC.w(ox-20,oy-16,ox-20,rfTopY-11)}
+    ${SC.w(pinOut[0]+20,oy,pinOut[0]+20,rfTopY-11)}
+    ${SC.res(ox+30,rfTopY-11,'Rf',!isNaN(Rf)?fmtOhm(Rf):'',42,22)}
+    ${SC.w(ox+8,rfTopY-11,ox-20,rfTopY-11)}
+    ${SC.dot(ox-20,rfTopY-11)}
+    `}
+
+    <!-- Output wire -->
+    ${SC.w(ox+50,oy,ox+70,oy)}
+    ${SC.dot(pinOut[0]+20,oy)}
+    ${SC.w(ox+70,oy,W-10,oy)}
+    ${SC.txt(W-8,oy+4,'Vout','var(--green)','end',10)}
+  `);
+}
+
+/* ── Draw: Transformatör ── */
+function drawTrafo(){
+  const N1=parseFloat(v('trN1')),N2=parseFloat(v('trN2'));
+  const V1=parseFloat(v('trV1')),I1=parseFloat(v('trI1'));
+  const n=(!isNaN(N1)&&!isNaN(N2)&&N1>0)?N2/N1:null;
+  const V2=n!==null&&!isNaN(V1)?V1*n:null;
+  const I2=n!==null&&!isNaN(I1)?I1/n:null;
+  const W=260,H=150,cy=75,coreX=118,coreW=24;
+  // Coil helper: draw N arcs at given side
+  function coil(cx,startY,nArcs,dir){ // dir: 1=right arcs, -1=left arcs
+    let s=`<line x1="${cx}" y1="${startY-4}" x2="${cx}" y2="${startY}" stroke="var(--ink)" stroke-width="1.5"/>`;
+    for(let i=0;i<nArcs;i++){
+      const y=startY+i*12;
+      s+=`<path d="M${cx},${y} a6,6 0 0,${dir===1?0:1} 0,12" fill="none" stroke="var(--acc)" stroke-width="2"/>`;
+    }
+    s+=`<line x1="${cx}" y1="${startY+nArcs*12}" x2="${cx}" y2="${startY+nArcs*12+4}" stroke="var(--ink)" stroke-width="1.5"/>`;
+    return s;
+  }
+  const coilArcs=4, coilStartY=cy-24, coilEndY=coilStartY+coilArcs*12;
+  scRender('trSvg',W,H,`
+    <!-- Core lines -->
+    <line x1="${coreX}" y1="${coilStartY-6}" x2="${coreX}" y2="${coilEndY+6}" stroke="var(--ink)" stroke-width="2.5"/>
+    <line x1="${coreX+coreW}" y1="${coilStartY-6}" x2="${coreX+coreW}" y2="${coilEndY+6}" stroke="var(--ink)" stroke-width="2.5"/>
+    <!-- Primary coil (left) -->
+    ${coil(coreX-2,coilStartY,coilArcs,-1)}
+    <!-- Secondary coil (right) -->
+    ${coil(coreX+coreW+2,coilStartY,coilArcs,1)}
+    <!-- Primary wires -->
+    ${SC.w(coreX-2,coilStartY-4,22,coilStartY-4)}
+    ${SC.w(coreX-2,coilEndY+4,22,coilEndY+4)}
+    <!-- Secondary wires -->
+    ${SC.w(coreX+coreW+2,coilStartY-4,W-22,coilStartY-4)}
+    ${SC.w(coreX+coreW+2,coilEndY+4,W-22,coilEndY+4)}
+    <!-- Labels -->
+    ${SC.txt(22,coilStartY-14,!isNaN(N1)?'N1='+fmtNum(N1):'N1','var(--ink)','start',10)}
+    ${SC.txt(22,coilEndY+18,!isNaN(V1)?'V1='+fmtNum(V1)+' V':'V1','var(--acc)','start',10)}
+    ${SC.txt(W-22,coilStartY-14,!isNaN(N2)?'N2='+fmtNum(N2):'N2','var(--ink)','end',10)}
+    ${SC.txt(W-22,coilEndY+18,V2!==null?'V2='+fmtNum(V2)+' V':'V2','var(--green)','end',10)}
+    ${n!==null?SC.txt(W/2,H-8,'n = '+fmtNum(n),'var(--ink-3)','middle',10):''}
+  `);
+}
+
+/* ── Draw: Güç Faktörü ── */
+function drawPf(){
+  const P=parseFloat(v('pfP')),Q=parseFloat(v('pfQ')),S=parseFloat(v('pfS')),pf=parseFloat(v('pfPF'));
+  let pp,qq,ss,cosphi;
+  if(!isNaN(S)&&!isNaN(pf)){ss=S;cosphi=pf;pp=S*pf;qq=S*Math.sqrt(Math.max(0,1-pf*pf));}
+  else if(!isNaN(P)&&!isNaN(pf)&&pf>0){pp=P;cosphi=pf;ss=P/pf;qq=Math.sqrt(Math.max(0,ss*ss-pp*pp));}
+  else if(!isNaN(P)&&!isNaN(Q)){pp=P;qq=Q;ss=Math.sqrt(P*P+Q*Q);cosphi=ss>0?P/ss:1;}
+  else if(!isNaN(P)&&!isNaN(S)&&S>=P){pp=P;ss=S;qq=Math.sqrt(Math.max(0,S*S-P*P));cosphi=P/S;}
+  else if(!isNaN(Q)&&!isNaN(S)){qq=Q;ss=S;pp=Math.sqrt(Math.max(0,S*S-Q*Q));cosphi=ss>0?pp/ss:0;}
+  const W=220,H=160,ox=30,oy=130;
+  const scale=pp&&ss?Math.min(130/ss,100/Math.max(qq,1)):60;
+  const px=(pp||60)*scale, qy=(qq||40)*scale;
+  const sx=px,sy=oy-qy;
+  const phi=cosphi?Math.acos(Math.min(1,Math.max(-1,cosphi)))*180/Math.PI:null;
+  scRender('pfSvg',W,H,`
+    <!-- P axis (horizontal) -->
+    ${SC.w(ox,oy,ox+px,oy,'var(--acc)')}
+    <polygon points="${ox+px+2},${oy-4} ${ox+px+10},${oy} ${ox+px+2},${oy+4}" fill="var(--acc)"/>
+    ${SC.txt(ox+px/2,oy+14,'P (W)','var(--acc)','middle',10)}
+    ${pp?SC.mono(ox+px/2,oy+24,fmtNum(pp)+' W','var(--acc)','middle',9):''}
+    <!-- Q axis (vertical) -->
+    ${SC.w(ox,oy,ox,oy-qy,'var(--red)')}
+    <polygon points="${ox-4},${oy-qy-2} ${ox},${oy-qy-10} ${ox+4},${oy-qy-2}" fill="var(--red)"/>
+    ${SC.txt(ox-8,oy-qy/2,'Q','var(--red)','middle',10)}
+    ${qq?SC.mono(ox-8,oy-qy/2+12,fmtNum(qq),'var(--red)','middle',9):''}
+    <!-- S hypotenuse -->
+    ${SC.w(ox,oy,ox+px,oy-qy,'var(--green)')}
+    ${SC.txt(ox+px/2+10,oy-qy/2-8,'S','var(--green)','middle',10)}
+    ${ss?SC.mono(ox+px/2+10,oy-qy/2+4,fmtNum(ss)+' VA','var(--green)','middle',9):''}
+    <!-- phi arc -->
+    ${phi!==null?`<path d="M${ox+28},${oy} A28,28 0 0,0 ${ox+28*Math.cos(phi*Math.PI/180)},${oy-28*Math.sin(phi*Math.PI/180)}" fill="none" stroke="var(--spark)" stroke-width="1.2" stroke-dasharray="3,2"/>
+    ${SC.txt(ox+36,oy-12,'φ='+fmtNum(phi)+'°','var(--spark)','start',9)}`:''}
+    <!-- right angle marker -->
+    <polyline points="${ox+10},${oy} ${ox+10},${oy-10} ${ox},${oy-10}" fill="none" stroke="var(--line-2)" stroke-width="1"/>
+  `);
+}
+
+/* ── Draw: Kirchhoff ── */
+function drawKirch(){
+  const V1=parseFloat(v('kcV1')),V2=parseFloat(v('kcV2'));
+  const R1=parseFloat(v('kcR1')),R2=parseFloat(v('kcR2')),R3=parseFloat(v('kcR3'));
+  const vv2=isNaN(V2)?0:V2;
+  const g1=R1>0?1/R1:0,g2=R2>0?1/R2:0,g3=R3>0?1/R3:0;
+  const Va=(g1+g2+g3>0)?(V1*g1+vv2*g2)/(g1+g2+g3):null;
+  const W=260,H=185,nx=130,ny=88; // node A position
+  scRender('kcSvg',W,H,`
+    <!-- V1 source (top-left) -->
+    ${SC.vs(28,40,!isNaN(V1)?fmtNum(V1)+' V':'V1')}
+    ${SC.w(28,24,28,10)}${SC.w(28,10,nx,10)}${SC.w(nx,10,nx,ny-12)}
+    ${SC.w(28,56,28,ny)}${SC.w(28,ny,78,ny)}
+    ${SC.res(100,ny,'R1',!isNaN(R1)?fmtOhm(R1):'')}
+    ${SC.w(121,ny,nx,ny)}
+
+    <!-- V2 source (bottom-left), optional -->
+    ${SC.vs(28,135,vv2!==0||!isNaN(V2)?fmtNum(vv2)+' V':'V2(0)')}
+    ${SC.w(28,119,28,ny)}${SC.dot(28,ny)}
+    ${SC.w(28,151,28,165)}${SC.w(28,165,nx,165)}${SC.w(nx,165,nx,ny+12)}
+    <!-- R2 on second branch but going from left to node ... hmm, I need to route this differently -->
+
+    <!-- Node A -->
+    ${SC.dot(nx,ny,'var(--acc)')}
+    ${Va!==null?SC.txt(nx+10,ny-8,fmtNum(Va)+' V','var(--acc)','start',11):''}
+    ${SC.txt(nx+10,ny+4,'A','var(--ink-3)','start',9)}
+
+    <!-- R3 to GND -->
+    ${SC.w(nx,ny+12,nx,ny+40)}
+    ${SC.res(nx,ny+54,'R3',!isNaN(R3)?fmtOhm(R3):'')}
+    ${SC.w(nx,ny+65,nx,ny+88)}
+    ${SC.gnd(nx,ny+90)}
+  `);
+}
+
 /* ── Voltaj Bölücü ── */
 function vdivCalc() {
+  drawVdiv();
   const Vin = parseFloat(v('vdVin')), R1 = parseFloat(v('vdR1')), R2 = parseFloat(v('vdR2'));
   const res = document.getElementById('vdRes');
   if (isNaN(Vin) || isNaN(R1) || isNaN(R2) || R1 + R2 === 0) {
@@ -262,6 +536,7 @@ function vdivCalc() {
 
 /* ── LED Direnç ── */
 function ledCalc() {
+  drawLed();
   const Vs = parseFloat(v('ledVs')), Vf = parseFloat(v('ledVf')), If = parseFloat(v('ledIf'));
   const res = document.getElementById('ledRes');
   if (isNaN(Vs) || isNaN(Vf) || isNaN(If) || If <= 0) {
@@ -276,6 +551,7 @@ function ledCalc() {
 
 /* ── RC/RL Zaman Sabiti ── */
 function tauCalc() {
+  drawTau();
   const R = parseFloat(v('tauR')), C = parseFloat(v('tauC')), L = parseFloat(v('tauL'));
   const res = document.getElementById('tauRes');
   const fmtT = t => t >= 1 ? fmtNum(t) + ' s' : t >= 0.001 ? fmtNum(t * 1000) + ' ms' : fmtNum(t * 1e6) + ' µs';
@@ -302,6 +578,7 @@ function dbSetMode(m) {
   dbCalc();
 }
 function dbCalc() {
+  drawDb();
   const ratio = parseFloat(v('dbRatio')), db = parseFloat(v('dbDb'));
   const res = document.getElementById('dbRes');
   const factor = DB_MODE === 'v' ? 20 : 10;
@@ -324,6 +601,7 @@ function opSetMode(m) {
   opampCalc();
 }
 function opampCalc() {
+  drawOpamp();
   const Rf = parseFloat(v('opRf')), R1 = parseFloat(v('opR1'));
   const res = document.getElementById('opRes');
   if (isNaN(Rf) || isNaN(R1) || R1 === 0) {
@@ -337,6 +615,7 @@ function opampCalc() {
 
 /* ── Transformatör ── */
 function trafoCalc() {
+  drawTrafo();
   const N1 = parseFloat(v('trN1')), N2 = parseFloat(v('trN2'));
   const V1 = parseFloat(v('trV1')), I1 = parseFloat(v('trI1'));
   const res = document.getElementById('trRes');
@@ -353,6 +632,7 @@ function trafoCalc() {
 
 /* ── Güç Faktörü ── */
 function pfCalc() {
+  drawPf();
   const P = parseFloat(v('pfP')), Q = parseFloat(v('pfQ')), S = parseFloat(v('pfS')), pf = parseFloat(v('pfPF'));
   const res = document.getElementById('pfRes');
   let pp, qq, ss, cosphi;
@@ -371,6 +651,7 @@ function pfCalc() {
 
 /* ── Kirchhoff Düğüm Çözücü ── */
 function kirchCalc() {
+  drawKirch();
   const V1 = parseFloat(v('kcV1')), V2 = parseFloat(v('kcV2'));
   const R1 = parseFloat(v('kcR1')), R2 = parseFloat(v('kcR2')), R3 = parseFloat(v('kcR3'));
   const res = document.getElementById('kcRes');
@@ -458,91 +739,107 @@ function buildTools() {
       <div class="result empty" id="ganoRes">Ders kredisi ve harf notunu gir.</div>
     </div>
 
-    <div class="tool">
+    <div class="tool wide">
       <div class="tool-head">
         <div class="tool-ico" style="background:var(--acc-soft);border-color:var(--acc-line)">÷</div>
         <div><div class="tool-title">Voltaj Bölücü</div><div class="tool-formula">Vout = Vin · R2 / (R1+R2)</div></div>
       </div>
-      <div class="field"><label class="label">Giriş gerilimi Vin (V)</label><input class="input" id="vdVin" type="number" placeholder="Volt" oninput="vdivCalc()"></div>
-      <div class="field-row">
-        <div class="field"><label class="label">R1 — üst (Ω)</label><input class="input" id="vdR1" type="number" placeholder="Ör: 10000" oninput="vdivCalc()"></div>
-        <div class="field"><label class="label">R2 — alt (Ω)</label><input class="input" id="vdR2" type="number" placeholder="Ör: 4700" oninput="vdivCalc()"></div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="vdSvg"></div></div>
+        <div>
+          <div class="field"><label class="label">Giriş gerilimi Vin (V)</label><input class="input" id="vdVin" type="number" placeholder="Volt" oninput="vdivCalc()"></div>
+          <div class="field"><label class="label">R1 — üst (Ω)</label><input class="input" id="vdR1" type="number" placeholder="Ör: 10000" oninput="vdivCalc()"></div>
+          <div class="field"><label class="label">R2 — alt (Ω)</label><input class="input" id="vdR2" type="number" placeholder="Ör: 4700" oninput="vdivCalc()"></div>
+          <div class="result empty" id="vdRes">Vin, R1 ve R2 değerlerini gir.</div>
+        </div>
       </div>
-      <div class="result empty" id="vdRes">Vin, R1 ve R2 değerlerini gir.</div>
     </div>
 
-    <div class="tool">
+    <div class="tool wide">
       <div class="tool-head">
         <div class="tool-ico" style="background:var(--spark-soft);border-color:var(--spark)">💡</div>
         <div><div class="tool-title">LED Direnç Hesaplayıcı</div><div class="tool-formula">R = (Vs − Vf) / If</div></div>
       </div>
-      <div class="field-row">
-        <div class="field"><label class="label">Kaynak Vs (V)</label><input class="input" id="ledVs" type="number" placeholder="Ör: 5" oninput="ledCalc()"></div>
-        <div class="field"><label class="label">LED Vf (V)</label><input class="input" id="ledVf" type="number" placeholder="Ör: 2.2" oninput="ledCalc()"></div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="ledSvg"></div></div>
+        <div>
+          <div class="field"><label class="label">Kaynak Vs (V)</label><input class="input" id="ledVs" type="number" placeholder="Ör: 5" oninput="ledCalc()"></div>
+          <div class="field"><label class="label">LED Vf (V)</label><input class="input" id="ledVf" type="number" placeholder="Ör: 2.2" oninput="ledCalc()"></div>
+          <div class="field"><label class="label">LED akımı If (mA)</label><input class="input" id="ledIf" type="number" placeholder="Ör: 20" oninput="ledCalc()"></div>
+          <div class="result empty" id="ledRes">Kaynak gerilimi, Vf ve If değerlerini gir.</div>
+        </div>
       </div>
-      <div class="field"><label class="label">LED akımı If (mA)</label><input class="input" id="ledIf" type="number" placeholder="Ör: 20" oninput="ledCalc()"></div>
-      <div class="result empty" id="ledRes">Kaynak gerilimi, Vf ve If değerlerini gir.</div>
     </div>
 
-    <div class="tool">
+    <div class="tool wide">
       <div class="tool-head">
         <div class="tool-ico" style="background:var(--green-soft);border-color:var(--green)">τ</div>
         <div><div class="tool-title">RC / RL Zaman Sabiti</div><div class="tool-formula">τ = R·C &nbsp;·&nbsp; τ = L/R</div></div>
       </div>
-      <div class="field"><label class="label">Direnç R (Ω)</label><input class="input" id="tauR" type="number" placeholder="Ohm" oninput="tauCalc()"></div>
-      <div class="field-row">
-        <div class="field"><label class="label">Kondansatör C (µF)</label><input class="input" id="tauC" type="number" placeholder="µF" oninput="tauCalc()"></div>
-        <div class="field"><label class="label">Bobin L (mH)</label><input class="input" id="tauL" type="number" placeholder="mH" oninput="tauCalc()"></div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="tauSvg"></div></div>
+        <div>
+          <div class="field"><label class="label">Direnç R (Ω)</label><input class="input" id="tauR" type="number" placeholder="Ohm" oninput="tauCalc()"></div>
+          <div class="field"><label class="label">Kondansatör C (µF)</label><input class="input" id="tauC" type="number" placeholder="µF" oninput="tauCalc()"></div>
+          <div class="field"><label class="label">Bobin L (mH)</label><input class="input" id="tauL" type="number" placeholder="mH" oninput="tauCalc()"></div>
+          <div class="result empty" id="tauRes">R+C veya R+L değerlerini gir.</div>
+        </div>
       </div>
-      <div class="result empty" id="tauRes">R+C veya R+L değerlerini gir.</div>
     </div>
 
-    <div class="tool">
+    <div class="tool wide">
       <div class="tool-head">
         <div class="tool-ico" style="background:var(--violet-soft);border-color:var(--violet)">dB</div>
         <div><div class="tool-title">dB Çevirici</div><div class="tool-formula">20·log(V₂/V₁) &nbsp;·&nbsp; 10·log(P₂/P₁)</div></div>
       </div>
-      <div class="seg" id="dbSeg" style="margin-bottom:14px">
-        <div class="seg-opt active" data-m="v" onclick="dbSetMode('v')">Gerilim ×20</div>
-        <div class="seg-opt" data-m="p" onclick="dbSetMode('p')">Güç ×10</div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="dbSvg"></div></div>
+        <div>
+          <div class="seg" id="dbSeg" style="margin-bottom:14px">
+            <div class="seg-opt active" data-m="v" onclick="dbSetMode('v')">Gerilim ×20</div>
+            <div class="seg-opt" data-m="p" onclick="dbSetMode('p')">Güç ×10</div>
+          </div>
+          <div class="field"><label class="label">Oran (lineer)</label><input class="input" id="dbRatio" type="number" step="any" placeholder="Ör: 2" oninput="document.getElementById('dbDb').value='';dbCalc()"></div>
+          <div class="field"><label class="label">Değer (dB)</label><input class="input" id="dbDb" type="number" step="any" placeholder="Ör: 6" oninput="document.getElementById('dbRatio').value='';dbCalc()"></div>
+          <div class="result empty" id="dbRes">Oran veya dB değeri gir.</div>
+        </div>
       </div>
-      <div class="field-row">
-        <div class="field"><label class="label">Oran (lineer)</label><input class="input" id="dbRatio" type="number" step="any" placeholder="Ör: 2" oninput="document.getElementById('dbDb').value='';dbCalc()"></div>
-        <div class="field"><label class="label">Değer (dB)</label><input class="input" id="dbDb" type="number" step="any" placeholder="Ör: 6" oninput="document.getElementById('dbRatio').value='';dbCalc()"></div>
-      </div>
-      <div class="result empty" id="dbRes">Oran veya dB değeri gir.</div>
     </div>
 
-    <div class="tool">
+    <div class="tool wide">
       <div class="tool-head">
         <div class="tool-ico" style="background:var(--acc-soft);border-color:var(--acc-line)">▲</div>
         <div><div class="tool-title">Op-Amp Kazanç</div><div class="tool-formula">Av = −Rf/R1 &nbsp;·&nbsp; 1+Rf/R1</div></div>
       </div>
-      <div class="seg" id="opSeg" style="margin-bottom:14px">
-        <div class="seg-opt active" data-m="inv" onclick="opSetMode('inv')">Çevirici (−)</div>
-        <div class="seg-opt" data-m="noninv" onclick="opSetMode('noninv')">Çevirmez (+)</div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="opSvg"></div></div>
+        <div>
+          <div class="seg" id="opSeg" style="margin-bottom:14px">
+            <div class="seg-opt active" data-m="inv" onclick="opSetMode('inv')">Çevirici (−)</div>
+            <div class="seg-opt" data-m="noninv" onclick="opSetMode('noninv')">Çevirmez (+)</div>
+          </div>
+          <div class="field"><label class="label">R1 — giriş (Ω)</label><input class="input" id="opR1" type="number" placeholder="Ör: 1000" oninput="opampCalc()"></div>
+          <div class="field"><label class="label">Rf — geri besleme (Ω)</label><input class="input" id="opRf" type="number" placeholder="Ör: 10000" oninput="opampCalc()"></div>
+          <div class="result empty" id="opRes">Rf ve R1 değerlerini gir.</div>
+        </div>
       </div>
-      <div class="field-row">
-        <div class="field"><label class="label">R1 — giriş (Ω)</label><input class="input" id="opR1" type="number" placeholder="Ör: 1000" oninput="opampCalc()"></div>
-        <div class="field"><label class="label">Rf — geri besleme (Ω)</label><input class="input" id="opRf" type="number" placeholder="Ör: 10000" oninput="opampCalc()"></div>
-      </div>
-      <div class="result empty" id="opRes">Rf ve R1 değerlerini gir.</div>
     </div>
 
-    <div class="tool">
+    <div class="tool wide">
       <div class="tool-head">
         <div class="tool-ico" style="background:var(--green-soft);border-color:var(--green)">🔌</div>
         <div><div class="tool-title">Transformatör Hesaplayıcı</div><div class="tool-formula">V₂/V₁ = N₂/N₁ &nbsp;·&nbsp; I₁·N₁ = I₂·N₂</div></div>
       </div>
-      <div class="field-row">
-        <div class="field"><label class="label">N1 — birincil sarım</label><input class="input" id="trN1" type="number" placeholder="Ör: 200" oninput="trafoCalc()"></div>
-        <div class="field"><label class="label">N2 — ikincil sarım</label><input class="input" id="trN2" type="number" placeholder="Ör: 40" oninput="trafoCalc()"></div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="trSvg"></div></div>
+        <div>
+          <div class="field"><label class="label">N1 — birincil sarım</label><input class="input" id="trN1" type="number" placeholder="Ör: 200" oninput="trafoCalc()"></div>
+          <div class="field"><label class="label">N2 — ikincil sarım</label><input class="input" id="trN2" type="number" placeholder="Ör: 40" oninput="trafoCalc()"></div>
+          <div class="field"><label class="label">V1 (V) opsiyonel</label><input class="input" id="trV1" type="number" placeholder="Birincil gerilim" oninput="trafoCalc()"></div>
+          <div class="field"><label class="label">I1 (A) opsiyonel</label><input class="input" id="trI1" type="number" placeholder="Birincil akım" oninput="trafoCalc()"></div>
+          <div class="result empty" id="trRes">N1 ve N2 sarım sayısını gir.</div>
+        </div>
       </div>
-      <div class="field-row">
-        <div class="field"><label class="label">V1 (V) opsiyonel</label><input class="input" id="trV1" type="number" placeholder="Birincil gerilim" oninput="trafoCalc()"></div>
-        <div class="field"><label class="label">I1 (A) opsiyonel</label><input class="input" id="trI1" type="number" placeholder="Birincil akım" oninput="trafoCalc()"></div>
-      </div>
-      <div class="result empty" id="trRes">N1 ve N2 sarım sayısını gir.</div>
     </div>
 
     <div class="tool wide">
@@ -550,13 +847,16 @@ function buildTools() {
         <div class="tool-ico" style="background:var(--red-soft);border-color:var(--red)">φ</div>
         <div><div class="tool-title">Güç Faktörü & Güç Üçgeni</div><div class="tool-formula">S² = P² + Q² &nbsp;·&nbsp; cos φ = P/S</div></div>
       </div>
-      <div class="field-row">
-        <div class="field"><label class="label">Aktif güç P (W)</label><input class="input" id="pfP" type="number" placeholder="Watt" oninput="pfCalc()"></div>
-        <div class="field"><label class="label">Reaktif güç Q (VAR)</label><input class="input" id="pfQ" type="number" placeholder="VAR" oninput="pfCalc()"></div>
-        <div class="field"><label class="label">Görünür güç S (VA)</label><input class="input" id="pfS" type="number" placeholder="VA" oninput="pfCalc()"></div>
-        <div class="field"><label class="label">Güç faktörü cos φ</label><input class="input" id="pfPF" type="number" step="0.01" min="0" max="1" placeholder="0 – 1" oninput="pfCalc()"></div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="pfSvg"></div></div>
+        <div>
+          <div class="field"><label class="label">Aktif güç P (W)</label><input class="input" id="pfP" type="number" placeholder="Watt" oninput="pfCalc()"></div>
+          <div class="field"><label class="label">Reaktif güç Q (VAR)</label><input class="input" id="pfQ" type="number" placeholder="VAR" oninput="pfCalc()"></div>
+          <div class="field"><label class="label">Görünür güç S (VA)</label><input class="input" id="pfS" type="number" placeholder="VA" oninput="pfCalc()"></div>
+          <div class="field"><label class="label">Güç faktörü cos φ</label><input class="input" id="pfPF" type="number" step="0.01" min="0" max="1" placeholder="0 – 1" oninput="pfCalc()"></div>
+          <div class="result empty" id="pfRes">En az iki değer gir.</div>
+        </div>
       </div>
-      <div class="result empty" id="pfRes">En az iki değer gir.</div>
     </div>
 
     <div class="tool wide">
@@ -564,18 +864,20 @@ function buildTools() {
         <div class="tool-ico" style="background:var(--spark-soft);border-color:var(--spark)">KCL</div>
         <div><div class="tool-title">Kirchhoff Düğüm Çözücü</div><div class="tool-formula">V1─R1─A─R3─GND &nbsp;·&nbsp; V2─R2─A</div></div>
       </div>
-      <div class="field-row">
-        <div class="field"><label class="label">V1 (V)</label><input class="input" id="kcV1" type="number" placeholder="Kaynak 1" oninput="kirchCalc()"></div>
-        <div class="field"><label class="label">V2 (V) opsiyonel</label><input class="input" id="kcV2" type="number" placeholder="Kaynak 2 (0 V)" oninput="kirchCalc()"></div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="kcSvg"></div></div>
+        <div>
+          <div class="field"><label class="label">V1 (V)</label><input class="input" id="kcV1" type="number" placeholder="Kaynak 1" oninput="kirchCalc()"></div>
+          <div class="field"><label class="label">V2 (V) opsiyonel</label><input class="input" id="kcV2" type="number" placeholder="Kaynak 2 (0 V)" oninput="kirchCalc()"></div>
+          <div class="field"><label class="label">R1 — V1 kolunda (Ω)</label><input class="input" id="kcR1" type="number" placeholder="Ör: 1000" oninput="kirchCalc()"></div>
+          <div class="field"><label class="label">R2 — V2 kolunda (Ω)</label><input class="input" id="kcR2" type="number" placeholder="Ör: 2200" oninput="kirchCalc()"></div>
+          <div class="field"><label class="label">R3 — GND'ye (Ω)</label><input class="input" id="kcR3" type="number" placeholder="Ör: 3300" oninput="kirchCalc()"></div>
+          <div class="result empty" id="kcRes">V1, R1, R2, R3 zorunlu; V2 opsiyonel.</div>
+        </div>
       </div>
-      <div class="field-row">
-        <div class="field"><label class="label">R1 — V1 kolunda (Ω)</label><input class="input" id="kcR1" type="number" placeholder="Ör: 1000" oninput="kirchCalc()"></div>
-        <div class="field"><label class="label">R2 — V2 kolunda (Ω)</label><input class="input" id="kcR2" type="number" placeholder="Ör: 2200" oninput="kirchCalc()"></div>
-        <div class="field"><label class="label">R3 — GND'ye (Ω)</label><input class="input" id="kcR3" type="number" placeholder="Ör: 3300" oninput="kirchCalc()"></div>
-      </div>
-      <div class="result empty" id="kcRes">V1, R1, R2, R3 zorunlu; V2 opsiyonel.</div>
     </div>`;
   RC_BANDS = 5;
   initRc();
   ganoReset();
+  drawVdiv(); drawLed(); drawTau(); drawDb(); drawOpamp(); drawTrafo(); drawPf(); drawKirch();
 }
