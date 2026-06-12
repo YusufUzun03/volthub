@@ -841,6 +841,300 @@ function supCalc() {
     `I₁ = <b>${fmtNum(I1 * 1000)} mA</b> &nbsp;·&nbsp; I₂ = <b>${fmtNum(I2 * 1000)} mA</b> &nbsp;·&nbsp; I₃ = <b>${fmtNum(I3 * 1000)} mA</b>`;
 }
 
+/* ═══════════ RMS DEĞER HESABI ═══════════ */
+let RMS_MODE = 'sin';
+function rmsSetMode(m) {
+  RMS_MODE = m;
+  document.querySelectorAll('#rmsSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.m === m));
+  rmsCalc();
+}
+function rmsCalc() {
+  const res = document.getElementById('rmsRes');
+  if (!res) return;
+  const Vp = parseFloat(v('rmsVp'));
+  if (isNaN(Vp) || Vp <= 0) { res.className = 'result empty'; res.textContent = 'Tepe değerini (Vp) gir.'; return; }
+  let Vrms, Vavg, ff, label;
+  if (RMS_MODE === 'sin') {
+    Vrms = Vp / Math.SQRT2; Vavg = Vp * 2 / Math.PI; ff = Math.PI / (2 * Math.SQRT2); label = 'Sinüs';
+  } else if (RMS_MODE === 'square') {
+    Vrms = Vp; Vavg = Vp; ff = 1; label = 'Kare';
+  } else {
+    Vrms = Vp / Math.sqrt(3); Vavg = Vp / 2; ff = 2 / Math.sqrt(3); label = 'Üçgen';
+  }
+  res.className = 'result';
+  res.innerHTML =
+    `<b>${label}</b> · Vp = ${fmtNum(Vp)} V<br>` +
+    `V<sub>rms</sub> = <b>${fmtNum(Vrms)} V</b> &nbsp;·&nbsp; V<sub>pp</sub> = <b>${fmtNum(Vp * 2)} V</b><br>` +
+    `V<sub>ort</sub> = <b>${fmtNum(Vavg)} V</b> &nbsp;·&nbsp; Form faktörü <b>${fmtNum(ff)}</b>`;
+}
+
+/* ═══════════ 3 FAZLI GÜÇ ═══════════ */
+let PHASE3_CONN = 'Y';
+function phase3SetConn(c) {
+  PHASE3_CONN = c;
+  document.querySelectorAll('#ph3Seg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.c === c));
+  phase3Calc();
+}
+function phase3Calc() {
+  const res = document.getElementById('ph3Res');
+  if (!res) return;
+  const Vin = parseFloat(v('ph3Vf')), I = parseFloat(v('ph3I')), pf = parseFloat(v('ph3PF'));
+  if (isNaN(Vin) || isNaN(I) || isNaN(pf) || Vin <= 0 || I <= 0 || pf <= 0 || pf > 1) {
+    res.className = 'result empty'; res.textContent = 'Faz gerilimi, akım ve güç faktörü (0–1) gir.'; return;
+  }
+  const Vl   = PHASE3_CONN === 'Y' ? Vin * Math.sqrt(3) : Vin;
+  const Vfaz = PHASE3_CONN === 'Y' ? Vin : Vin / Math.sqrt(3);
+  const Il   = PHASE3_CONN === 'Y' ? I   : I * Math.sqrt(3);
+  const S = Math.sqrt(3) * Vl * Il;
+  const P = S * pf;
+  const Q = S * Math.sqrt(Math.max(0, 1 - pf * pf));
+  const phi = Math.acos(Math.min(1, pf)) * 180 / Math.PI;
+  res.className = 'result';
+  res.innerHTML =
+    `<b>${PHASE3_CONN === 'Y' ? 'Yıldız (Y)' : 'Üçgen (Δ)'}</b> bağlantı<br>` +
+    `V<sub>hat</sub> = <b>${fmtNum(Vl)} V</b> &nbsp;·&nbsp; V<sub>faz</sub> = <b>${fmtNum(Vfaz)} V</b><br>` +
+    `Aktif P = <b>${fmtNum(P)} W</b> &nbsp;·&nbsp; Reaktif Q = <b>${fmtNum(Q)} VAR</b><br>` +
+    `Görünür S = <b>${fmtNum(S)} VA</b> &nbsp;·&nbsp; φ = <b>${fmtNum(phi)}°</b>`;
+}
+
+/* ═══════════ DC-DC DÖNÜŞTÜRÜCÜ ═══════════ */
+let DCDC_MODE = 'buck';
+function dcdcSetMode(m) {
+  DCDC_MODE = m;
+  document.querySelectorAll('#dcdcSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.m === m));
+  dcdcCalc();
+}
+function dcdcCalc() {
+  const res = document.getElementById('dcdcRes');
+  if (!res) return;
+  const Vin = parseFloat(v('dcdcVin')), Vout = parseFloat(v('dcdcVout'));
+  const Iout = parseFloat(v('dcdcI')), f = parseFloat(v('dcdcF'));
+  if (isNaN(Vin) || isNaN(Vout) || Vin <= 0 || Vout <= 0) {
+    res.className = 'result empty'; res.textContent = 'Vin ve Vout gir.'; return;
+  }
+  if (DCDC_MODE === 'buck' && Vout >= Vin) { res.className='result'; res.innerHTML='⚠️ Buck: Vout &lt; Vin olmalı.'; return; }
+  if (DCDC_MODE === 'boost' && Vout <= Vin) { res.className='result'; res.innerHTML='⚠️ Boost: Vout &gt; Vin olmalı.'; return; }
+  const D = DCDC_MODE === 'buck' ? Vout / Vin : 1 - Vin / Vout;
+  const Iin = !isNaN(Iout) ? (DCDC_MODE === 'buck' ? Iout * D : Iout / (1 - D)) : null;
+  const Lmin = (!isNaN(Iout) && !isNaN(f) && f > 0 && Iout > 0)
+    ? ((DCDC_MODE === 'buck' ? (Vin - Vout) * D : Vout * D) / (f * Iout)) * 1000 : null;
+  res.className = 'result';
+  res.innerHTML =
+    `<b>${DCDC_MODE === 'buck' ? 'Buck — Düşürücü' : 'Boost — Yükseltici'}</b><br>` +
+    `Duty cycle D = <b>${fmtNum(D * 100)}%</b><br>` +
+    (Iin !== null ? `Giriş akımı I<sub>in</sub> ≈ <b>${fmtNum(Iin)} A</b><br>` : '') +
+    (Lmin !== null ? `Min bobin L<sub>min</sub> = <b>${fmtNum(Lmin)} mH</b> <span style="color:var(--ink-3);font-size:.9em">(CCM)</span>` : '');
+}
+
+/* ═══════════ BATARYA ÖMRÜ ═══════════ */
+function battCalc() {
+  const res = document.getElementById('battRes');
+  if (!res) return;
+  const cap = parseFloat(v('battCap')), curr = parseFloat(v('battCurr')), eff = parseFloat(v('battEff') || '85');
+  if (isNaN(cap) || isNaN(curr) || cap <= 0 || curr <= 0) {
+    res.className = 'result empty'; res.textContent = 'Kapasite (mAh) ve ortalama akım (mA) gir.'; return;
+  }
+  const effV = (isNaN(eff) || eff <= 0 || eff > 100) ? 85 : eff;
+  const teorik = cap / curr;
+  const pratik = teorik * effV / 100;
+  const fmtH = h => h >= 24 ? `${Math.floor(h/24)} gün ${fmtNum(h % 24)} s` : `${fmtNum(h)} saat`;
+  res.className = 'result';
+  res.innerHTML =
+    `Teorik ömür = <b>${fmtH(teorik)}</b><br>` +
+    `Pratik ömür (%${fmtNum(effV)} verim) = <b>${fmtH(pratik)}</b>`;
+}
+
+/* ═══════════ KONDANSATÖR ENERJİ / ŞARj ═══════════ */
+let CAP_MODE = 'energy';
+function capSetMode(m) {
+  CAP_MODE = m;
+  document.querySelectorAll('#capSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.m === m));
+  document.getElementById('capEnergyFields').style.display = m === 'energy' ? '' : 'none';
+  document.getElementById('capTimeFields').style.display   = m === 'time'   ? '' : 'none';
+  capCalc();
+}
+function capCalc() {
+  const res = document.getElementById('capRes');
+  if (!res) return;
+  const fmtT = t => t >= 1 ? fmtNum(t)+' s' : t >= 0.001 ? fmtNum(t*1000)+' ms' : fmtNum(t*1e6)+' µs';
+  if (CAP_MODE === 'energy') {
+    const C = parseFloat(v('capC')), V = parseFloat(v('capV'));
+    if (isNaN(C) || isNaN(V) || C <= 0) { res.className='result empty'; res.textContent='C (µF) ve V gir.'; return; }
+    const Cv = C / 1e6;
+    const E = 0.5 * Cv * V * V, Q = Cv * V;
+    res.className = 'result';
+    res.innerHTML =
+      `E = ½CV² = <b>${E >= 1 ? fmtNum(E)+' J' : fmtNum(E*1000)+' mJ'}</b><br>` +
+      `Q = CV = <b>${Q >= 1e-3 ? fmtNum(Q*1000)+' mC' : fmtNum(Q*1e6)+' µC'}</b>`;
+  } else {
+    const C = parseFloat(v('capCt')), R = parseFloat(v('capRt')), Vs = parseFloat(v('capVs')), Vt = parseFloat(v('capVt'));
+    if (isNaN(C)||isNaN(R)||isNaN(Vs)||isNaN(Vt)||C<=0||R<=0||Vs===0) { res.className='result empty'; res.textContent='C, R, Vs ve hedef V gir.'; return; }
+    const tau = R * (C / 1e6);
+    const ratio = 1 - Vt / Vs;
+    if (ratio <= 0 || ratio >= 1) { res.className='result'; res.innerHTML='⚠️ Hedef gerilim 0 ile Vs arasında olmalı.'; return; }
+    const t = -tau * Math.log(ratio);
+    res.className = 'result';
+    res.innerHTML = `τ = RC = <b>${fmtT(tau)}</b><br>` + `${fmtNum(Vt)} V'a şarj süresi = <b>${fmtT(t)}</b> (${fmtNum(t/tau)} τ)`;
+  }
+}
+
+/* ═══════════ BOBİN ENDÜKTANS ═══════════ */
+let COIL_MODE = 'solenoid';
+function coilSetMode(m) {
+  COIL_MODE = m;
+  document.querySelectorAll('#coilSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.m === m));
+  document.getElementById('coilSolFields').style.display = m === 'solenoid' ? '' : 'none';
+  document.getElementById('coilTorFields').style.display = m === 'toroid'   ? '' : 'none';
+  coilCalc();
+}
+function coilCalc() {
+  const res = document.getElementById('coilRes');
+  if (!res) return;
+  const µ0 = 4 * Math.PI * 1e-7;
+  const fmtL = L => L >= 1e-3 ? fmtNum(L*1000)+' mH' : L >= 1e-6 ? fmtNum(L*1e6)+' µH' : fmtNum(L*1e9)+' nH';
+  if (COIL_MODE === 'solenoid') {
+    const N = parseFloat(v('coilN')), A = parseFloat(v('coilA')), l = parseFloat(v('coilL')), ur = parseFloat(v('coilUr') || '1');
+    if (isNaN(N)||isNaN(A)||isNaN(l)||N<=0||A<=0||l<=0) { res.className='result empty'; res.textContent='N, A (cm²) ve l (cm) gir.'; return; }
+    const urV = isNaN(ur)||ur<=0 ? 1 : ur;
+    const L = µ0 * urV * N * N * (A / 1e4) / (l / 100);
+    res.className = 'result';
+    res.innerHTML = `L = µ₀µᵣN²A/l = <b>${fmtL(L)}</b> &nbsp;·&nbsp; µᵣ = ${fmtNum(urV)}`;
+  } else {
+    const N = parseFloat(v('coilNt')), A = parseFloat(v('coilAt')), r = parseFloat(v('coilRt')), ur = parseFloat(v('coilUrt') || '1');
+    if (isNaN(N)||isNaN(A)||isNaN(r)||N<=0||A<=0||r<=0) { res.className='result empty'; res.textContent='N, A (cm²) ve r (cm) gir.'; return; }
+    const urV = isNaN(ur)||ur<=0 ? 1 : ur;
+    const L = µ0 * urV * N * N * (A / 1e4) / (2 * Math.PI * r / 100);
+    res.className = 'result';
+    res.innerHTML = `L = µ₀µᵣN²A/(2πr) = <b>${fmtL(L)}</b> &nbsp;·&nbsp; µᵣ = ${fmtNum(urV)}`;
+  }
+}
+
+/* ═══════════ ZENER REGÜLATÖR ═══════════ */
+function drawZener(vs, vz, rs, pz) {
+  const cx = 84, W = 215, H = 218;
+  const live = rs !== null;
+  scRender('zenSvg', W, H, `
+    ${live ? SC.badge(cx, 8, fmtNum(vs)+' V', 'var(--acc)', 'var(--acc-soft)') : SC.txt(cx, 10, 'Vs', 'var(--ink-3)')}
+    ${SC.vs(cx, 36, '')}
+    ${SC.wa(cx, 54, cx, 68)}
+    ${SC.res(cx, 80, 'Rs', live ? fmtOhm(rs) : '?')}
+    ${SC.w(cx, 92, cx, 112)}
+    <polygon points="${cx-14},112 ${cx+14},112 ${cx},136" fill="var(--acc-soft)" stroke="var(--acc)" stroke-width="2"/>
+    <line x1="${cx-16}" y1="136" x2="${cx+16}" y2="136" stroke="var(--acc)" stroke-width="2.5"/>
+    <line x1="${cx-16}" y1="136" x2="${cx-16}" y2="130" stroke="var(--acc)" stroke-width="2"/>
+    <line x1="${cx+16}" y1="136" x2="${cx+16}" y2="142" stroke="var(--acc)" stroke-width="2"/>
+    ${live ? SC.badge(cx, 153, 'Pz='+fmtNum(pz*1000)+' mW', 'var(--red)', 'var(--red-soft)') : ''}
+    ${SC.w(cx, 136, cx, 178)} ${SC.gnd(cx, 180)}
+    ${SC.dot(cx, 112, 'var(--green)')}
+    ${SC.w(cx + 14, 112, cx + 58, 112)}
+    ${SC.w(cx + 58, 112, cx + 58, 165)}
+    ${SC.gnd(cx + 58, 167)}
+    ${live ? SC.badge(cx+66, 136, fmtNum(vz)+' V', 'var(--green)', 'var(--green-soft)', 'start') : SC.txt(cx+66, 116, 'Vout', 'var(--ink-3)', 'start', 9)}
+  `);
+}
+function zenerCalc() {
+  const res = document.getElementById('zenRes');
+  if (!res) return;
+  const Vs = parseFloat(v('zenVs')), Vz = parseFloat(v('zenVz'));
+  const Iz = parseFloat(v('zenIz')), IL = parseFloat(v('zenIL') || '0');
+  if (isNaN(Vs) || isNaN(Vz) || isNaN(Iz)) { drawZener(null,null,null,null); res.className='result empty'; res.textContent='Vs, Vz ve Iz_min gir.'; return; }
+  if (Vs <= Vz) { drawZener(null,null,null,null); res.className='result'; res.innerHTML='⚠️ Vs, Vz değerinden büyük olmalı.'; return; }
+  const ILv = isNaN(IL) ? 0 : IL / 1000;
+  const It = Iz / 1000 + ILv;
+  const Rs = (Vs - Vz) / It;
+  const Pz = Vz * (Iz / 1000);
+  const Ps = (Vs - Vz) * It;
+  drawZener(Vs, Vz, Rs, Pz);
+  res.className = 'result';
+  res.innerHTML =
+    `Rs = (Vs−Vz)/I<sub>tot</sub> = <b>${fmtOhm(Rs)}</b><br>` +
+    `P<sub>Zener</sub> = <b>${fmtNum(Pz*1000)} mW</b> &nbsp;·&nbsp; P<sub>Rs</sub> = <b>${fmtNum(Ps*1000)} mW</b><br>` +
+    `V<sub>out</sub> = <b>${fmtNum(Vz)} V</b> (sabit)`;
+}
+
+/* ═══════════ PCB İZ GENİŞLİĞİ (IPC-2221) ═══════════ */
+let PCB_LAYER = 'ext';
+function pcbSetLayer(l) {
+  PCB_LAYER = l;
+  document.querySelectorAll('#pcbSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.l === l));
+  pcbCalc();
+}
+function pcbCalc() {
+  const res = document.getElementById('pcbRes');
+  if (!res) return;
+  const I = parseFloat(v('pcbI')), dT = parseFloat(v('pcbDT') || '10'), th = parseFloat(v('pcbTh') || '1');
+  if (isNaN(I) || I <= 0) { res.className='result empty'; res.textContent='Akım (A) gir.'; return; }
+  const dTv = isNaN(dT)||dT<=0 ? 10 : dT;
+  const thV = isNaN(th)||th<=0 ? 1 : th;
+  const k = PCB_LAYER === 'ext' ? 0.048 : 0.024;
+  const A_mil2 = Math.pow(I / (k * Math.pow(dTv, 0.44)), 1 / 0.725);
+  const W_mil  = A_mil2 / (thV * 1.378);
+  const W_mm   = W_mil * 0.0254;
+  res.className = 'result';
+  res.innerHTML =
+    `<b>${PCB_LAYER === 'ext' ? 'Dış' : 'İç'} katman</b> — ΔT=${fmtNum(dTv)}°C, ${fmtNum(thV)} oz Cu<br>` +
+    `Min iz genişliği: <b>${fmtNum(W_mm)} mm</b> (${fmtNum(W_mil)} mil)<br>` +
+    `Kesit alanı: <b>${fmtNum(A_mil2)} mil²</b>`;
+}
+
+/* ═══════════ KABLO VOLTAJ DÜŞÜMü ═══════════ */
+let CABLE_MAT = 'cu';
+function cableSetMat(m) {
+  CABLE_MAT = m;
+  document.querySelectorAll('#cableSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.m === m));
+  cableCalc();
+}
+function cableCalc() {
+  const res = document.getElementById('cableRes');
+  if (!res) return;
+  const I = parseFloat(v('cableI')), L = parseFloat(v('cableL')), A = parseFloat(v('cableA')), Vsys = parseFloat(v('cableV'));
+  if (isNaN(I)||isNaN(L)||isNaN(A)||I<=0||L<=0||A<=0) { res.className='result empty'; res.textContent='Akım (A), uzunluk (m) ve kesit (mm²) gir.'; return; }
+  const rho = CABLE_MAT === 'cu' ? 1.72e-8 : 2.82e-8;
+  const R  = 2 * rho * L / (A / 1e6);
+  const dV = R * I;
+  const pct = !isNaN(Vsys) && Vsys > 0 ? dV / Vsys * 100 : null;
+  res.className = 'result';
+  res.innerHTML =
+    `Kablo R = <b>${fmtOhm(R)}</b> (gidiş+dönüş)<br>` +
+    `ΔV = <b>${fmtNum(dV)} V</b>` +
+    (pct !== null ? ` &nbsp;(<b>${fmtNum(pct)}%</b>)` : '') +
+    `<br>Güç kaybı P = <b>${fmtNum(R*I*I)} W</b>`;
+}
+
+/* ═══════════ OSİLATÖR ═══════════ */
+let OSC_MODE = 'lc';
+function oscSetMode(m) {
+  OSC_MODE = m;
+  document.querySelectorAll('#oscSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.m === m));
+  ['lcFields','colpFields','hartFields'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
+  const show = document.getElementById(m+'Fields');
+  if (show) show.style.display = '';
+  oscCalc();
+}
+function oscCalc() {
+  const res = document.getElementById('oscRes');
+  if (!res) return;
+  const fmtF = f => f >= 1e9 ? fmtNum(f/1e9)+' GHz' : f >= 1e6 ? fmtNum(f/1e6)+' MHz' : f >= 1e3 ? fmtNum(f/1e3)+' kHz' : fmtNum(f)+' Hz';
+  if (OSC_MODE === 'lc') {
+    const L = parseFloat(v('oscL')), C = parseFloat(v('oscC'));
+    if (isNaN(L)||isNaN(C)||L<=0||C<=0) { res.className='result empty'; res.textContent='L (µH) ve C (pF) gir.'; return; }
+    const f = 1 / (2*Math.PI*Math.sqrt((L/1e6)*(C/1e12)));
+    res.className='result'; res.innerHTML=`f = 1/(2π√LC) = <b>${fmtF(f)}</b>`;
+  } else if (OSC_MODE === 'colp') {
+    const L = parseFloat(v('colpL')), C1 = parseFloat(v('colpC1')), C2 = parseFloat(v('colpC2'));
+    if (isNaN(L)||isNaN(C1)||isNaN(C2)||L<=0||C1<=0||C2<=0) { res.className='result empty'; res.textContent='L (µH), C1 ve C2 (pF) gir.'; return; }
+    const Ceq = C1*C2/(C1+C2);
+    const f = 1 / (2*Math.PI*Math.sqrt((L/1e6)*(Ceq/1e12)));
+    res.className='result'; res.innerHTML=`C<sub>eq</sub> = C1‖C2 = <b>${fmtNum(Ceq)} pF</b><br>f = <b>${fmtF(f)}</b>`;
+  } else {
+    const L1 = parseFloat(v('hartL1')), L2 = parseFloat(v('hartL2')), C = parseFloat(v('hartC'));
+    if (isNaN(L1)||isNaN(L2)||isNaN(C)||L1<=0||L2<=0||C<=0) { res.className='result empty'; res.textContent='L1, L2 (µH) ve C (pF) gir.'; return; }
+    const Leq = L1+L2;
+    const f = 1 / (2*Math.PI*Math.sqrt((Leq/1e6)*(C/1e12)));
+    res.className='result'; res.innerHTML=`L<sub>eq</sub> = L1+L2 = <b>${fmtNum(Leq)} µH</b><br>f = <b>${fmtF(f)}</b>`;
+  }
+}
+
 /* ═══════════ ÖRNEKLEME (NYQUIST) ═══════════ */
 let NYQ_MODE = 'sig2samp';
 function nyqSetMode(m) {
@@ -1554,6 +1848,207 @@ function buildTools() {
         <div class="seg-opt"        data-g="NOT"  onclick="gateSetSel('NOT')">NOT</div>
       </div>
       <div id="gateRes" class="result empty">Kapı seçiliyor…</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--acc-soft);border-color:var(--acc-line)">~</div>
+        <div><div class="tool-title">RMS Değer Hesabı</div><div class="tool-formula">Sinüs · Kare · Üçgen &nbsp;·&nbsp; Vrms, Vpp, Vort</div></div>
+      </div>
+      <div class="seg" id="rmsSeg" style="margin-bottom:14px">
+        <div class="seg-opt active" data-m="sin"    onclick="rmsSetMode('sin')">Sinüs</div>
+        <div class="seg-opt"        data-m="square" onclick="rmsSetMode('square')">Kare</div>
+        <div class="seg-opt"        data-m="tri"    onclick="rmsSetMode('tri')">Üçgen</div>
+      </div>
+      <div class="field"><label class="label">Tepe değeri Vp (V)</label><input class="input" id="rmsVp" type="number" step="any" placeholder="Ör: 10" oninput="rmsCalc()"></div>
+      <div class="result empty" id="rmsRes">Tepe değerini (Vp) gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--spark-soft);border-color:var(--spark)">3φ</div>
+        <div><div class="tool-title">3 Fazlı Güç</div><div class="tool-formula">S = √3·V<sub>L</sub>·I<sub>L</sub> &nbsp;·&nbsp; Y / Δ bağlantı</div></div>
+      </div>
+      <div class="seg" id="ph3Seg" style="margin-bottom:14px">
+        <div class="seg-opt active" data-c="Y" onclick="phase3SetConn('Y')">Yıldız (Y)</div>
+        <div class="seg-opt"        data-c="D" onclick="phase3SetConn('D')">Üçgen (Δ)</div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label class="label">Faz gerilimi Vf (V)</label><input class="input" id="ph3Vf" type="number" placeholder="Ör: 220" oninput="phase3Calc()"></div>
+        <div class="field"><label class="label">Hat akımı IL (A)</label><input class="input" id="ph3I" type="number" placeholder="Ör: 10" oninput="phase3Calc()"></div>
+        <div class="field"><label class="label">Güç faktörü cos φ</label><input class="input" id="ph3PF" type="number" step="0.01" min="0" max="1" placeholder="0 – 1" oninput="phase3Calc()"></div>
+      </div>
+      <div class="result empty" id="ph3Res">Faz gerilimi, akım ve güç faktörü gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--green-soft);border-color:var(--green)">DC</div>
+        <div><div class="tool-title">DC-DC Dönüştürücü</div><div class="tool-formula">Buck: D = Vout/Vin &nbsp;·&nbsp; Boost: D = 1−Vin/Vout</div></div>
+      </div>
+      <div class="seg" id="dcdcSeg" style="margin-bottom:14px">
+        <div class="seg-opt active" data-m="buck"  onclick="dcdcSetMode('buck')">Buck — Düşürücü</div>
+        <div class="seg-opt"        data-m="boost" onclick="dcdcSetMode('boost')">Boost — Yükseltici</div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label class="label">Vin (V)</label><input class="input" id="dcdcVin"  type="number" placeholder="Ör: 12" oninput="dcdcCalc()"></div>
+        <div class="field"><label class="label">Vout (V)</label><input class="input" id="dcdcVout" type="number" placeholder="Ör: 5"  oninput="dcdcCalc()"></div>
+        <div class="field"><label class="label">Iout (A) opsiyonel</label><input class="input" id="dcdcI" type="number" placeholder="Yük akımı" oninput="dcdcCalc()"></div>
+        <div class="field"><label class="label">f (Hz) opsiyonel</label><input class="input" id="dcdcF" type="number" placeholder="Anahtarlama" oninput="dcdcCalc()"></div>
+      </div>
+      <div class="result empty" id="dcdcRes">Vin ve Vout gir.</div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--green-soft);border-color:var(--green)">🔋</div>
+        <div><div class="tool-title">Batarya Ömrü</div><div class="tool-formula">t = kapasite / akım</div></div>
+      </div>
+      <div class="field"><label class="label">Kapasite (mAh)</label><input class="input" id="battCap" type="number" placeholder="Ör: 3000" oninput="battCalc()"></div>
+      <div class="field"><label class="label">Ortalama akım (mA)</label><input class="input" id="battCurr" type="number" placeholder="Ör: 50" oninput="battCalc()"></div>
+      <div class="field"><label class="label">Verim % (varsayılan 85)</label><input class="input" id="battEff" type="number" placeholder="85" oninput="battCalc()"></div>
+      <div class="result empty" id="battRes">Kapasite ve akım gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--violet-soft);border-color:var(--violet)">C</div>
+        <div><div class="tool-title">Kondansatör Enerji / Şarj</div><div class="tool-formula">E = ½CV² &nbsp;·&nbsp; V(t) = Vs·(1−e<sup>−t/τ</sup>)</div></div>
+      </div>
+      <div class="seg" id="capSeg" style="margin-bottom:14px">
+        <div class="seg-opt active" data-m="energy" onclick="capSetMode('energy')">Enerji & Yük</div>
+        <div class="seg-opt"        data-m="time"   onclick="capSetMode('time')">Şarj Süresi</div>
+      </div>
+      <div id="capEnergyFields">
+        <div class="field-row">
+          <div class="field"><label class="label">C (µF)</label><input class="input" id="capC" type="number" placeholder="Ör: 100" oninput="capCalc()"></div>
+          <div class="field"><label class="label">V (V)</label><input class="input" id="capV" type="number" placeholder="Ör: 12" oninput="capCalc()"></div>
+        </div>
+      </div>
+      <div id="capTimeFields" style="display:none">
+        <div class="field-row">
+          <div class="field"><label class="label">C (µF)</label><input class="input" id="capCt" type="number" placeholder="Ör: 100" oninput="capCalc()"></div>
+          <div class="field"><label class="label">R (Ω)</label><input class="input" id="capRt" type="number" placeholder="Ör: 1000" oninput="capCalc()"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="label">Kaynak Vs (V)</label><input class="input" id="capVs" type="number" placeholder="Ör: 12" oninput="capCalc()"></div>
+          <div class="field"><label class="label">Hedef V (V)</label><input class="input" id="capVt" type="number" placeholder="Ör: 10" oninput="capCalc()"></div>
+        </div>
+      </div>
+      <div class="result empty" id="capRes">Değerleri gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--acc-soft);border-color:var(--acc-line)">L</div>
+        <div><div class="tool-title">Bobin Endüktans</div><div class="tool-formula">L = µ₀µᵣN²A/l &nbsp;·&nbsp; Solenoid / Toroid</div></div>
+      </div>
+      <div class="seg" id="coilSeg" style="margin-bottom:14px">
+        <div class="seg-opt active" data-m="solenoid" onclick="coilSetMode('solenoid')">Solenoid</div>
+        <div class="seg-opt"        data-m="toroid"   onclick="coilSetMode('toroid')">Toroid</div>
+      </div>
+      <div id="coilSolFields">
+        <div class="field-row">
+          <div class="field"><label class="label">Sarım sayısı N</label><input class="input" id="coilN" type="number" placeholder="Ör: 100" oninput="coilCalc()"></div>
+          <div class="field"><label class="label">Kesit alanı A (cm²)</label><input class="input" id="coilA" type="number" step="any" placeholder="Ör: 1" oninput="coilCalc()"></div>
+          <div class="field"><label class="label">Uzunluk l (cm)</label><input class="input" id="coilL" type="number" step="any" placeholder="Ör: 10" oninput="coilCalc()"></div>
+          <div class="field"><label class="label">µᵣ (varsayılan 1)</label><input class="input" id="coilUr" type="number" placeholder="Hava = 1" oninput="coilCalc()"></div>
+        </div>
+      </div>
+      <div id="coilTorFields" style="display:none">
+        <div class="field-row">
+          <div class="field"><label class="label">Sarım N</label><input class="input" id="coilNt" type="number" placeholder="Ör: 50" oninput="coilCalc()"></div>
+          <div class="field"><label class="label">Kesit A (cm²)</label><input class="input" id="coilAt" type="number" step="any" placeholder="Ör: 0.5" oninput="coilCalc()"></div>
+          <div class="field"><label class="label">Orta yarıçap r (cm)</label><input class="input" id="coilRt" type="number" step="any" placeholder="Ör: 2" oninput="coilCalc()"></div>
+          <div class="field"><label class="label">µᵣ (varsayılan 1)</label><input class="input" id="coilUrt" type="number" placeholder="Hava = 1" oninput="coilCalc()"></div>
+        </div>
+      </div>
+      <div class="result empty" id="coilRes">N, A ve l/r gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--spark-soft);border-color:var(--spark)">Zn</div>
+        <div><div class="tool-title">Zener Regülatör</div><div class="tool-formula">Rs = (Vs−Vz)/I<sub>tot</sub> &nbsp;·&nbsp; Vout = Vz</div></div>
+      </div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="zenSvg"></div></div>
+        <div>
+          <div class="field"><label class="label">Kaynak Vs (V)</label><input class="input" id="zenVs" type="number" placeholder="Ör: 12" oninput="zenerCalc()"></div>
+          <div class="field"><label class="label">Zener Vz (V)</label><input class="input" id="zenVz" type="number" step="any" placeholder="Ör: 5.1" oninput="zenerCalc()"></div>
+          <div class="field"><label class="label">Iz min (mA)</label><input class="input" id="zenIz" type="number" placeholder="Ör: 5" oninput="zenerCalc()"></div>
+          <div class="field"><label class="label">Yük akımı IL (mA) opsiyonel</label><input class="input" id="zenIL" type="number" placeholder="Ör: 20" oninput="zenerCalc()"></div>
+          <div class="result empty" id="zenRes">Vs, Vz ve Iz_min gir.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--green-soft);border-color:var(--green)">PCB</div>
+        <div><div class="tool-title">PCB İz Genişliği</div><div class="tool-formula">IPC-2221 &nbsp;·&nbsp; I = k·ΔT<sup>0.44</sup>·A<sup>0.725</sup></div></div>
+      </div>
+      <div class="seg" id="pcbSeg" style="margin-bottom:14px">
+        <div class="seg-opt active" data-l="ext" onclick="pcbSetLayer('ext')">Dış katman</div>
+        <div class="seg-opt"        data-l="int" onclick="pcbSetLayer('int')">İç katman</div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label class="label">Akım (A)</label><input class="input" id="pcbI" type="number" step="any" placeholder="Ör: 1" oninput="pcbCalc()"></div>
+        <div class="field"><label class="label">ΔT (°C, varsayılan 10)</label><input class="input" id="pcbDT" type="number" placeholder="10" oninput="pcbCalc()"></div>
+        <div class="field"><label class="label">Cu kalınlığı (oz, varsayılan 1)</label><input class="input" id="pcbTh" type="number" step="any" placeholder="1" oninput="pcbCalc()"></div>
+      </div>
+      <div class="result empty" id="pcbRes">Akım değerini gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--acc-soft);border-color:var(--acc-line)">ΔV</div>
+        <div><div class="tool-title">Kablo Voltaj Düşümü</div><div class="tool-formula">ΔV = 2ρLI/A &nbsp;·&nbsp; Cu / Al</div></div>
+      </div>
+      <div class="seg" id="cableSeg" style="margin-bottom:14px">
+        <div class="seg-opt active" data-m="cu" onclick="cableSetMat('cu')">Bakır (Cu)</div>
+        <div class="seg-opt"        data-m="al" onclick="cableSetMat('al')">Alüminyum (Al)</div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label class="label">Akım (A)</label><input class="input" id="cableI" type="number" step="any" placeholder="Ör: 10" oninput="cableCalc()"></div>
+        <div class="field"><label class="label">Uzunluk (m)</label><input class="input" id="cableL" type="number" step="any" placeholder="Ör: 50" oninput="cableCalc()"></div>
+        <div class="field"><label class="label">Kesit (mm²)</label><input class="input" id="cableA" type="number" step="any" placeholder="Ör: 2.5" oninput="cableCalc()"></div>
+        <div class="field"><label class="label">Sistem gerilimi (V) opsiyonel</label><input class="input" id="cableV" type="number" placeholder="Ör: 230" oninput="cableCalc()"></div>
+      </div>
+      <div class="result empty" id="cableRes">Akım, uzunluk ve kesit gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--violet-soft);border-color:var(--violet)">osc</div>
+        <div><div class="tool-title">Osilatör (LC / Colpitts / Hartley)</div><div class="tool-formula">f = 1/(2π√LC)</div></div>
+      </div>
+      <div class="seg" id="oscSeg" style="margin-bottom:14px">
+        <div class="seg-opt active" data-m="lc"   onclick="oscSetMode('lc')">LC Temel</div>
+        <div class="seg-opt"        data-m="colp"  onclick="oscSetMode('colp')">Colpitts</div>
+        <div class="seg-opt"        data-m="hart"  onclick="oscSetMode('hart')">Hartley</div>
+      </div>
+      <div id="lcFields">
+        <div class="field-row">
+          <div class="field"><label class="label">L (µH)</label><input class="input" id="oscL" type="number" step="any" placeholder="Ör: 10" oninput="oscCalc()"></div>
+          <div class="field"><label class="label">C (pF)</label><input class="input" id="oscC" type="number" step="any" placeholder="Ör: 100" oninput="oscCalc()"></div>
+        </div>
+      </div>
+      <div id="colpFields" style="display:none">
+        <div class="field-row">
+          <div class="field"><label class="label">L (µH)</label><input class="input" id="colpL" type="number" step="any" placeholder="Ör: 10" oninput="oscCalc()"></div>
+          <div class="field"><label class="label">C1 (pF)</label><input class="input" id="colpC1" type="number" step="any" placeholder="Ör: 100" oninput="oscCalc()"></div>
+          <div class="field"><label class="label">C2 (pF)</label><input class="input" id="colpC2" type="number" step="any" placeholder="Ör: 100" oninput="oscCalc()"></div>
+        </div>
+      </div>
+      <div id="hartFields" style="display:none">
+        <div class="field-row">
+          <div class="field"><label class="label">L1 (µH)</label><input class="input" id="hartL1" type="number" step="any" placeholder="Ör: 5" oninput="oscCalc()"></div>
+          <div class="field"><label class="label">L2 (µH)</label><input class="input" id="hartL2" type="number" step="any" placeholder="Ör: 5" oninput="oscCalc()"></div>
+          <div class="field"><label class="label">C (pF)</label><input class="input" id="hartC" type="number" step="any" placeholder="Ör: 100" oninput="oscCalc()"></div>
+        </div>
+      </div>
+      <div class="result empty" id="oscRes">Değerleri gir.</div>
     </div>`;
 
   RC_BANDS = 5;
@@ -1562,6 +2057,8 @@ function buildTools() {
   drawVdiv(); drawLed(); drawTau(); drawDb(); drawOpamp(); drawTrafo(); drawPf(); drawKirch();
   thCalc(); wsCalc(); drawSup(null, null, null, false);
   nyqCalc(); snrCalc(); numConvCalc(); buildGateTable();
+  rmsCalc(); phase3Calc(); dcdcCalc(); battCalc(); capCalc(); coilCalc();
+  zenerCalc(); pcbCalc(); cableCalc(); oscSetMode('lc');
   timer555Calc();
   rcFiltCalc();
   buildUnitSelects();
