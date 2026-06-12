@@ -841,6 +841,137 @@ function supCalc() {
     `I₁ = <b>${fmtNum(I1 * 1000)} mA</b> &nbsp;·&nbsp; I₂ = <b>${fmtNum(I2 * 1000)} mA</b> &nbsp;·&nbsp; I₃ = <b>${fmtNum(I3 * 1000)} mA</b>`;
 }
 
+/* ═══════════ ÖRNEKLEME (NYQUIST) ═══════════ */
+let NYQ_MODE = 'sig2samp';
+function nyqSetMode(m) {
+  NYQ_MODE = m;
+  document.querySelectorAll('#nyqSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.m === m));
+  document.getElementById('nyqFieldsSig').style.display  = m === 'sig2samp'  ? '' : 'none';
+  document.getElementById('nyqFieldsSamp').style.display = m === 'samp2sig' ? '' : 'none';
+  nyqCalc();
+}
+function nyqCalc() {
+  const res = document.getElementById('nyqRes');
+  if (!res) return;
+  const fmtHz = f => f >= 1e9 ? fmtNum(f/1e9)+' GHz' : f >= 1e6 ? fmtNum(f/1e6)+' MHz' : f >= 1e3 ? fmtNum(f/1e3)+' kHz' : fmtNum(f)+' Hz';
+  if (NYQ_MODE === 'sig2samp') {
+    const fs = parseFloat(v('nyqSig'));
+    if (isNaN(fs) || fs <= 0) { res.className = 'result empty'; res.textContent = 'Sinyal frekansını gir.'; return; }
+    res.className = 'result';
+    res.innerHTML =
+      `Nyquist hızı = 2·f = <b>${fmtHz(fs * 2)}</b><br>` +
+      `Önerilen (×10 kural): <b>${fmtHz(fs * 10)}</b><br>` +
+      `<b>${fmtHz(fs)}</b> altında örnekleme → aliasing`;
+  } else {
+    const fs = parseFloat(v('nyqSamp'));
+    if (isNaN(fs) || fs <= 0) { res.className = 'result empty'; res.textContent = 'Örnekleme frekansını gir.'; return; }
+    const fMax = fs / 2;
+    res.className = 'result';
+    res.innerHTML =
+      `Max sinyal frekansı = fs/2 = <b>${fmtHz(fMax)}</b><br>` +
+      `Bu sınırın üstündeki bileşenler aliasing'e uğrar`;
+  }
+}
+
+/* ═══════════ SNR HESABI ═══════════ */
+let SNR_MODE = 'ratio2db', SNR_TYPE = 'power';
+function snrSetMode(m) {
+  SNR_MODE = m;
+  document.querySelectorAll('#snrSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.m === m));
+  document.getElementById('snrFieldsRatio').style.display = m === 'ratio2db' ? '' : 'none';
+  document.getElementById('snrFieldsDb').style.display    = m === 'db2ratio' ? '' : 'none';
+  snrCalc();
+}
+function snrSetType(t) {
+  SNR_TYPE = t;
+  document.querySelectorAll('#snrTypeSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.t === t));
+  snrCalc();
+}
+function snrCalc() {
+  const res = document.getElementById('snrRes');
+  if (!res) return;
+  const k = SNR_TYPE === 'power' ? 10 : 20;
+  if (SNR_MODE === 'ratio2db') {
+    const ratio = parseFloat(v('snrRatio'));
+    if (isNaN(ratio) || ratio <= 0) { res.className = 'result empty'; res.textContent = 'Sinyal/gürültü oranını gir.'; return; }
+    const db = k * Math.log10(ratio);
+    const enob = (db - 1.76) / 6.02;
+    res.className = 'result';
+    res.innerHTML = `SNR = <b>${fmtNum(db)} dB</b>` +
+      (SNR_TYPE === 'power' ? `<br>ENOB ≈ <b>${fmtNum(enob)} bit</b> &nbsp;<span style="color:var(--ink-3);font-size:.9em">(ADC için)</span>` : '');
+  } else {
+    const db = parseFloat(v('snrDb'));
+    if (isNaN(db)) { res.className = 'result empty'; res.textContent = 'SNR değerini dB cinsinden gir.'; return; }
+    const ratio = Math.pow(10, db / k);
+    const enob  = (db - 1.76) / 6.02;
+    res.className = 'result';
+    res.innerHTML = `Oran = <b>${fmtNum(ratio)}</b>` +
+      (SNR_TYPE === 'power' ? `<br>ENOB ≈ <b>${fmtNum(enob)} bit</b>` : '');
+  }
+}
+
+/* ═══════════ SAYI SİSTEMİ ÇEVİRİCİ ═══════════ */
+function numConvCalc() {
+  const res = document.getElementById('numRes');
+  if (!res) return;
+  const input = (v('numInput') || '').trim().toUpperCase();
+  const base  = parseInt(v('numBase') || '10');
+  if (!input) { res.className = 'result empty'; res.textContent = 'Değeri gir.'; return; }
+  const valid = { 2: /^[01]+$/, 8: /^[0-7]+$/, 10: /^-?\d+$/, 16: /^[0-9A-F]+$/ };
+  if (!valid[base].test(input)) { res.className = 'result'; res.innerHTML = '⚠️ Geçersiz karakter bu tabanda.'; return; }
+  const num = parseInt(input, base);
+  if (isNaN(num)) { res.className = 'result empty'; res.textContent = 'Geçersiz değer.'; return; }
+  const u = num >>> 0;
+  res.className = 'result';
+  res.innerHTML =
+    `<span style="color:var(--ink-3);font-size:.85em">DEC</span> &nbsp;<b>${num}</b><br>` +
+    `<span style="color:var(--ink-3);font-size:.85em">BIN</span> &nbsp;<code style="font-family:var(--mono)">${u.toString(2)}</code><br>` +
+    `<span style="color:var(--ink-3);font-size:.85em">OCT</span> &nbsp;<code style="font-family:var(--mono)">${u.toString(8)}</code><br>` +
+    `<span style="color:var(--ink-3);font-size:.85em">HEX</span> &nbsp;<code style="font-family:var(--mono)">${u.toString(16).toUpperCase()}</code>`;
+}
+
+/* ═══════════ MANTIK KAPISI TABLOSU ═══════════ */
+const LOGIC_GATES = {
+  AND:  { sym: 'A · B',  fn: (a,b) => a & b,        n: 2 },
+  OR:   { sym: 'A + B',  fn: (a,b) => a | b,        n: 2 },
+  NAND: { sym: '¬(A·B)', fn: (a,b) => (a & b) ^ 1,  n: 2 },
+  NOR:  { sym: '¬(A+B)', fn: (a,b) => (a | b) ^ 1,  n: 2 },
+  XOR:  { sym: 'A ⊕ B',  fn: (a,b) => a ^ b,        n: 2 },
+  XNOR: { sym: '¬(A⊕B)', fn: (a,b) => (a ^ b) ^ 1, n: 2 },
+  NOT:  { sym: '¬A',     fn: (a)   => a ^ 1,         n: 1 },
+};
+let GATE_SEL = 'AND';
+function gateSetSel(g) {
+  GATE_SEL = g;
+  document.querySelectorAll('#gateSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.g === g));
+  buildGateTable();
+}
+function buildGateTable() {
+  const res = document.getElementById('gateRes');
+  if (!res) return;
+  const gate = LOGIC_GATES[GATE_SEL];
+  const cell = (t, bold, color) =>
+    `<td style="padding:5px 14px;text-align:center;${bold?'font-weight:700;':''}${color?'color:'+color+';':''}">${t}</td>`;
+  let rows = '';
+  if (gate.n === 2) {
+    rows += `<tr>${cell('A')+''+cell('B')+''+cell('Y')}</tr>`;
+    [[0,0],[0,1],[1,0],[1,1]].forEach(([a,b]) => {
+      const y = gate.fn(a, b);
+      rows += `<tr>${cell(a)}${cell(b)}${cell(y, true, y ? 'var(--green)' : 'var(--red)')}</tr>`;
+    });
+  } else {
+    rows += `<tr>${cell('A')+''+cell('Y')}</tr>`;
+    [0,1].forEach(a => {
+      const y = gate.fn(a);
+      rows += `<tr>${cell(a)}${cell(y, true, y ? 'var(--green)' : 'var(--red)')}</tr>`;
+    });
+  }
+  res.className = 'result';
+  res.innerHTML =
+    `<div style="font-weight:700;color:var(--acc);margin-bottom:10px;font-family:var(--mono)">${GATE_SEL} &nbsp;·&nbsp; Y = ${gate.sym}</div>` +
+    `<table style="border-collapse:collapse;font-family:var(--mono);font-size:13px">${rows}</table>`;
+}
+
 /* ═══════════ 555 ZAMANLAYICI ═══════════ */
 let TIMER555_MODE = 'astable';
 function timer555SetMode(m) {
@@ -1328,7 +1459,7 @@ function buildTools() {
     <div class="tool wide">
       <div class="tool-head">
         <div class="tool-ico" style="background:var(--violet-soft);border-color:var(--violet)">⇄</div>
-        <div><div class="tool-title">Birim Çevirici</div><div class="tool-formula">Elektriksel tüm birimler arası</div></div>
+        <div><div class="tool-title">Birim Çevirici</div><div class="tool-formula">Gerilim · Akım · Direnç · Güç · Frekans · Kapasite · Endüktans</div></div>
       </div>
       <div class="seg" id="unitCatSeg" style="margin-bottom:14px;flex-wrap:wrap">
         <div class="seg-opt active" data-c="gerilim" onclick="unitSetCat('gerilim')">Gerilim</div>
@@ -1345,6 +1476,84 @@ function buildTools() {
         <div class="field"><label class="label">Birime</label><select class="input select" id="unitTo" onchange="unitConvert()"></select></div>
       </div>
       <div class="result empty" id="unitRes">Çevirmek istediğin değeri gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--violet-soft);border-color:var(--violet)">Ny</div>
+        <div><div class="tool-title">Örnekleme (Nyquist)</div><div class="tool-formula">f<sub>s</sub> ≥ 2·f<sub>max</sub> &nbsp;·&nbsp; aliasing sınırı</div></div>
+      </div>
+      <div class="seg" id="nyqSeg" style="margin-bottom:14px">
+        <div class="seg-opt active" data-m="sig2samp" onclick="nyqSetMode('sig2samp')">Sinyal → Örnekleme hızı</div>
+        <div class="seg-opt" data-m="samp2sig" onclick="nyqSetMode('samp2sig')">Örnekleme → Max sinyal</div>
+      </div>
+      <div id="nyqFieldsSig">
+        <div class="field"><label class="label">Sinyal frekansı (Hz)</label><input class="input" id="nyqSig" type="number" placeholder="Ör: 1000" oninput="nyqCalc()"></div>
+      </div>
+      <div id="nyqFieldsSamp" style="display:none">
+        <div class="field"><label class="label">Örnekleme frekansı fs (Hz)</label><input class="input" id="nyqSamp" type="number" placeholder="Ör: 44100" oninput="nyqCalc()"></div>
+      </div>
+      <div class="result empty" id="nyqRes">Frekans değerini gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--acc-soft);border-color:var(--acc-line)">SNR</div>
+        <div><div class="tool-title">SNR Hesabı</div><div class="tool-formula">10·log(P₂/P₁) &nbsp;·&nbsp; 20·log(V₂/V₁) &nbsp;·&nbsp; ENOB</div></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <div class="seg" id="snrTypeSeg">
+          <div class="seg-opt active" data-t="power" onclick="snrSetType('power')">Güç (×10)</div>
+          <div class="seg-opt" data-t="voltage" onclick="snrSetType('voltage')">Gerilim (×20)</div>
+        </div>
+        <div class="seg" id="snrSeg">
+          <div class="seg-opt active" data-m="ratio2db" onclick="snrSetMode('ratio2db')">Oran → dB</div>
+          <div class="seg-opt" data-m="db2ratio" onclick="snrSetMode('db2ratio')">dB → Oran</div>
+        </div>
+      </div>
+      <div id="snrFieldsRatio">
+        <div class="field"><label class="label">Sinyal / Gürültü oranı</label><input class="input" id="snrRatio" type="number" step="any" placeholder="Ör: 100" oninput="snrCalc()"></div>
+      </div>
+      <div id="snrFieldsDb" style="display:none">
+        <div class="field"><label class="label">SNR (dB)</label><input class="input" id="snrDb" type="number" step="any" placeholder="Ör: 40" oninput="snrCalc()"></div>
+      </div>
+      <div class="result empty" id="snrRes">Oran veya dB değerini gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--spark-soft);border-color:var(--spark)">01</div>
+        <div><div class="tool-title">Sayı Sistemi Çevirici</div><div class="tool-formula">DEC · BIN · OCT · HEX arası</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label class="label">Değer</label><input class="input" id="numInput" placeholder="Ör: 255" oninput="numConvCalc()"></div>
+        <div class="field"><label class="label">Giriş tabanı</label>
+          <select class="input select" id="numBase" onchange="numConvCalc()">
+            <option value="10">10 — Decimal</option>
+            <option value="2">2 — Binary</option>
+            <option value="8">8 — Octal</option>
+            <option value="16">16 — Hexadecimal</option>
+          </select>
+        </div>
+      </div>
+      <div class="result empty" id="numRes">Değeri gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--green-soft);border-color:var(--green)">⊕</div>
+        <div><div class="tool-title">Mantık Kapısı Tablosu</div><div class="tool-formula">AND · OR · NAND · NOR · XOR · XNOR · NOT</div></div>
+      </div>
+      <div class="seg" id="gateSeg" style="margin-bottom:14px;flex-wrap:wrap">
+        <div class="seg-opt active" data-g="AND"  onclick="gateSetSel('AND')">AND</div>
+        <div class="seg-opt"        data-g="OR"   onclick="gateSetSel('OR')">OR</div>
+        <div class="seg-opt"        data-g="NAND" onclick="gateSetSel('NAND')">NAND</div>
+        <div class="seg-opt"        data-g="NOR"  onclick="gateSetSel('NOR')">NOR</div>
+        <div class="seg-opt"        data-g="XOR"  onclick="gateSetSel('XOR')">XOR</div>
+        <div class="seg-opt"        data-g="XNOR" onclick="gateSetSel('XNOR')">XNOR</div>
+        <div class="seg-opt"        data-g="NOT"  onclick="gateSetSel('NOT')">NOT</div>
+      </div>
+      <div id="gateRes" class="result empty">Kapı seçiliyor…</div>
     </div>`;
 
   RC_BANDS = 5;
@@ -1352,6 +1561,7 @@ function buildTools() {
   ganoReset();
   drawVdiv(); drawLed(); drawTau(); drawDb(); drawOpamp(); drawTrafo(); drawPf(); drawKirch();
   thCalc(); wsCalc(); drawSup(null, null, null, false);
+  nyqCalc(); snrCalc(); numConvCalc(); buildGateTable();
   timer555Calc();
   rcFiltCalc();
   buildUnitSelects();
