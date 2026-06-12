@@ -685,6 +685,170 @@ function kirchCalc() {
     `I₁ = <b>${fmtNum(I1 * 1000)} mA</b> &nbsp;·&nbsp; I₂ = <b>${fmtNum(I2 * 1000)} mA</b> &nbsp;·&nbsp; I₃ = <b>${fmtNum(I3 * 1000)} mA</b>`;
 }
 
+/* ═══════════ 555 ZAMANLAYICI ═══════════ */
+let TIMER555_MODE = 'astable';
+function timer555SetMode(m) {
+  TIMER555_MODE = m;
+  document.querySelectorAll('#t555Seg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.m === m));
+  const monoFields = document.getElementById('t555MonoFields');
+  const astableFields = document.getElementById('t555AstableFields');
+  if (monoFields) monoFields.style.display = m === 'mono' ? '' : 'none';
+  if (astableFields) astableFields.style.display = m === 'astable' ? '' : 'none';
+  timer555Calc();
+}
+function timer555Calc() {
+  const res = document.getElementById('t555Res');
+  if (!res) return;
+  if (TIMER555_MODE === 'astable') {
+    const Ra = parseFloat(v('t555Ra')), Rb = parseFloat(v('t555Rb')), C = parseFloat(v('t555C'));
+    if (isNaN(Ra) || isNaN(Rb) || isNaN(C) || Ra <= 0 || Rb <= 0 || C <= 0) {
+      res.className = 'result empty'; res.textContent = 'Ra, Rb ve C değerlerini gir.'; return;
+    }
+    const Cv = C / 1e6;
+    const tH = 0.693 * (Ra + Rb) * Cv;
+    const tL = 0.693 * Rb * Cv;
+    const T = tH + tL;
+    const f = 1 / T;
+    const duty = (tH / T) * 100;
+    const fmtT = t => t >= 1 ? fmtNum(t) + ' s' : t >= 0.001 ? fmtNum(t * 1000) + ' ms' : fmtNum(t * 1e6) + ' µs';
+    res.className = 'result';
+    res.innerHTML =
+      `Frekans <b>${fmtNum(f >= 1000 ? f / 1000 : f)} ${f >= 1000 ? 'kHz' : 'Hz'}</b> &nbsp;·&nbsp; Periyot <b>${fmtT(T)}</b><br>` +
+      `t<sub>H</sub> = <b>${fmtT(tH)}</b> &nbsp;·&nbsp; t<sub>L</sub> = <b>${fmtT(tL)}</b> &nbsp;·&nbsp; Duty Cycle <b>${fmtNum(duty)}%</b>`;
+  } else {
+    const R = parseFloat(v('t555Rm')), C = parseFloat(v('t555Cm'));
+    if (isNaN(R) || isNaN(C) || R <= 0 || C <= 0) {
+      res.className = 'result empty'; res.textContent = 'R ve C değerlerini gir.'; return;
+    }
+    const t = 1.1 * R * (C / 1e6);
+    const fmtT = tt => tt >= 1 ? fmtNum(tt) + ' s' : tt >= 0.001 ? fmtNum(tt * 1000) + ' ms' : fmtNum(tt * 1e6) + ' µs';
+    res.className = 'result';
+    res.innerHTML = `Çıkış süresi t = 1.1·R·C = <b>${fmtT(t)}</b>`;
+  }
+}
+
+/* ═══════════ RC FİLTRE ═══════════ */
+let RC_FILT_MODE = 'lp';
+function rcFiltSetMode(m) {
+  RC_FILT_MODE = m;
+  document.querySelectorAll('#rcfSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.m === m));
+  rcFiltCalc();
+}
+function rcFiltCalc() {
+  const res = document.getElementById('rcfRes');
+  if (!res) return;
+  const R = parseFloat(v('rcfR')), C = parseFloat(v('rcfC'));
+  if (isNaN(R) || isNaN(C) || R <= 0 || C <= 0) {
+    res.className = 'result empty'; res.textContent = 'R ve C değerlerini gir.'; return;
+  }
+  const fc = 1 / (2 * Math.PI * R * (C / 1e6));
+  const omega = 2 * Math.PI * fc;
+  const modeLabel = { lp: 'Alçak Geçiren (LP)', hp: 'Yüksek Geçiren (HP)', bp: 'Bant Geçiren (BP)' }[RC_FILT_MODE];
+  const phaseLP = -45;
+  const phaseHP = 45;
+  res.className = 'result';
+  res.innerHTML =
+    `<b>${modeLabel}</b><br>` +
+    `-3 dB kesim frekansı <b>${fmtNum(fc >= 1000 ? fc / 1000 : fc)} ${fc >= 1000 ? 'kHz' : 'Hz'}</b><br>` +
+    `ω₀ = <b>${fmtNum(omega >= 1000 ? omega / 1000 : omega)} ${omega >= 1000 ? 'krad/s' : 'rad/s'}</b>` +
+    (RC_FILT_MODE === 'lp' ? ` &nbsp;·&nbsp; f = fc'de faz <b>${phaseLP}°</b>` : '') +
+    (RC_FILT_MODE === 'hp' ? ` &nbsp;·&nbsp; f = fc'de faz <b>+${phaseHP}°</b>` : '') +
+    (RC_FILT_MODE === 'bp' ? `<br>Merkez frekans = kesim frekansı, BW = <b>${fmtNum(fc)} Hz</b>` : '');
+}
+
+/* ═══════════ BİRİM ÇEVİRİCİ ═══════════ */
+const UNIT_CATS = {
+  gerilim: {
+    label: 'Gerilim', units: [
+      { k: 'V',  n: 'Volt',       f: 1 },
+      { k: 'mV', n: 'Milivolt',   f: 1e-3 },
+      { k: 'µV', n: 'Mikrovolt',  f: 1e-6 },
+      { k: 'kV', n: 'Kilovolt',   f: 1e3 },
+    ]
+  },
+  akim: {
+    label: 'Akım', units: [
+      { k: 'A',  n: 'Amper',      f: 1 },
+      { k: 'mA', n: 'Miliamper',  f: 1e-3 },
+      { k: 'µA', n: 'Mikroamper', f: 1e-6 },
+      { k: 'kA', n: 'Kiloamper',  f: 1e3 },
+    ]
+  },
+  direnc: {
+    label: 'Direnç', units: [
+      { k: 'Ω',  n: 'Ohm',        f: 1 },
+      { k: 'mΩ', n: 'Miliohm',    f: 1e-3 },
+      { k: 'kΩ', n: 'Kilohm',     f: 1e3 },
+      { k: 'MΩ', n: 'Megaohm',    f: 1e6 },
+    ]
+  },
+  guc: {
+    label: 'Güç', units: [
+      { k: 'W',  n: 'Watt',       f: 1 },
+      { k: 'mW', n: 'Miliwatt',   f: 1e-3 },
+      { k: 'kW', n: 'Kilowatt',   f: 1e3 },
+      { k: 'MW', n: 'Megawatt',   f: 1e6 },
+    ]
+  },
+  frekans: {
+    label: 'Frekans', units: [
+      { k: 'Hz',  n: 'Hertz',      f: 1 },
+      { k: 'kHz', n: 'Kilohertz',  f: 1e3 },
+      { k: 'MHz', n: 'Megahertz',  f: 1e6 },
+      { k: 'GHz', n: 'Gigahertz',  f: 1e9 },
+    ]
+  },
+  kapasite: {
+    label: 'Kapasite', units: [
+      { k: 'F',  n: 'Farad',      f: 1 },
+      { k: 'mF', n: 'Milifarad',  f: 1e-3 },
+      { k: 'µF', n: 'Mikrofarad', f: 1e-6 },
+      { k: 'nF', n: 'Nanofarad',  f: 1e-9 },
+      { k: 'pF', n: 'Pikofarad',  f: 1e-12 },
+    ]
+  },
+  induktans: {
+    label: 'Endüktans', units: [
+      { k: 'H',  n: 'Henri',      f: 1 },
+      { k: 'mH', n: 'Milihenri',  f: 1e-3 },
+      { k: 'µH', n: 'Mikrohenri', f: 1e-6 },
+      { k: 'nH', n: 'Nanohenri',  f: 1e-9 },
+    ]
+  },
+};
+let UNIT_CAT = 'gerilim';
+function unitSetCat(c) {
+  UNIT_CAT = c;
+  document.querySelectorAll('#unitCatSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.c === c));
+  buildUnitSelects();
+  unitConvert();
+}
+function buildUnitSelects() {
+  const cat = UNIT_CATS[UNIT_CAT];
+  const opts = cat.units.map((u, i) => `<option value="${i}">${u.k} — ${u.n}</option>`).join('');
+  const from = document.getElementById('unitFrom');
+  const to = document.getElementById('unitTo');
+  if (from) { from.innerHTML = opts; from.value = '0'; }
+  if (to)   { to.innerHTML = opts;   to.value = '1'; }
+}
+function unitConvert() {
+  const res = document.getElementById('unitRes');
+  if (!res) return;
+  const val = parseFloat(v('unitVal'));
+  const fromIdx = parseInt((document.getElementById('unitFrom') || {}).value || 0);
+  const toIdx   = parseInt((document.getElementById('unitTo')   || {}).value || 1);
+  const cat = UNIT_CATS[UNIT_CAT];
+  if (isNaN(val)) { res.className = 'result empty'; res.textContent = 'Çevirmek istediğin değeri gir.'; return; }
+  const base = val * cat.units[fromIdx].f;
+  const out  = base / cat.units[toIdx].f;
+  const fmt  = x => {
+    if (Math.abs(x) >= 1e9 || (Math.abs(x) < 1e-4 && x !== 0)) return x.toExponential(4);
+    return (Math.round(x * 1e6) / 1e6).toLocaleString('tr-TR');
+  };
+  res.className = 'result';
+  res.innerHTML = `<b>${fmtNum(val)} ${cat.units[fromIdx].k}</b> = <span style="font-size:1.15em;font-weight:700;color:var(--acc)">${fmt(out)} ${cat.units[toIdx].k}</span>`;
+}
+
 function buildTools() {
   document.getElementById('toolGrid').innerHTML = `
     <div class="tool">
@@ -892,9 +1056,78 @@ function buildTools() {
           <div class="result empty" id="kcRes">V1, R1, R2, R3 zorunlu; V2 opsiyonel.</div>
         </div>
       </div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--spark-soft);border-color:var(--spark)">555</div>
+        <div><div class="tool-title">555 Zamanlayıcı</div><div class="tool-formula">Astable / Monostable · frekans & duty cycle</div></div>
+      </div>
+      <div class="seg" id="t555Seg" style="margin-bottom:14px">
+        <div class="seg-opt active" data-m="astable" onclick="timer555SetMode('astable')">Astable (salınım)</div>
+        <div class="seg-opt" data-m="mono" onclick="timer555SetMode('mono')">Monostable (tek darbe)</div>
+      </div>
+      <div id="t555AstableFields">
+        <div class="field-row">
+          <div class="field"><label class="label">Ra (Ω)</label><input class="input" id="t555Ra" type="number" placeholder="Ör: 10000" oninput="timer555Calc()"></div>
+          <div class="field"><label class="label">Rb (Ω)</label><input class="input" id="t555Rb" type="number" placeholder="Ör: 4700" oninput="timer555Calc()"></div>
+          <div class="field"><label class="label">C (µF)</label><input class="input" id="t555C" type="number" placeholder="Ör: 0.1" oninput="timer555Calc()"></div>
+        </div>
+      </div>
+      <div id="t555MonoFields" style="display:none">
+        <div class="field-row">
+          <div class="field"><label class="label">R (Ω)</label><input class="input" id="t555Rm" type="number" placeholder="Ör: 10000" oninput="timer555Calc()"></div>
+          <div class="field"><label class="label">C (µF)</label><input class="input" id="t555Cm" type="number" placeholder="Ör: 1" oninput="timer555Calc()"></div>
+        </div>
+      </div>
+      <div class="result empty" id="t555Res">Ra, Rb ve C değerlerini gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--green-soft);border-color:var(--green)">RC</div>
+        <div><div class="tool-title">RC Filtre</div><div class="tool-formula">f<sub>c</sub> = 1/(2πRC) &nbsp;·&nbsp; LP / HP / BP</div></div>
+      </div>
+      <div class="seg" id="rcfSeg" style="margin-bottom:14px">
+        <div class="seg-opt active" data-m="lp" onclick="rcFiltSetMode('lp')">Alçak Geçiren (LP)</div>
+        <div class="seg-opt" data-m="hp" onclick="rcFiltSetMode('hp')">Yüksek Geçiren (HP)</div>
+        <div class="seg-opt" data-m="bp" onclick="rcFiltSetMode('bp')">Bant Geçiren (BP)</div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label class="label">R (Ω)</label><input class="input" id="rcfR" type="number" placeholder="Ör: 1000" oninput="rcFiltCalc()"></div>
+        <div class="field"><label class="label">C (µF)</label><input class="input" id="rcfC" type="number" placeholder="Ör: 0.1" oninput="rcFiltCalc()"></div>
+      </div>
+      <div class="result empty" id="rcfRes">R ve C değerlerini gir.</div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--violet-soft);border-color:var(--violet)">⇄</div>
+        <div><div class="tool-title">Birim Çevirici</div><div class="tool-formula">Elektriksel tüm birimler arası</div></div>
+      </div>
+      <div class="seg" id="unitCatSeg" style="margin-bottom:14px;flex-wrap:wrap">
+        <div class="seg-opt active" data-c="gerilim" onclick="unitSetCat('gerilim')">Gerilim</div>
+        <div class="seg-opt" data-c="akim" onclick="unitSetCat('akim')">Akım</div>
+        <div class="seg-opt" data-c="direnc" onclick="unitSetCat('direnc')">Direnç</div>
+        <div class="seg-opt" data-c="guc" onclick="unitSetCat('guc')">Güç</div>
+        <div class="seg-opt" data-c="frekans" onclick="unitSetCat('frekans')">Frekans</div>
+        <div class="seg-opt" data-c="kapasite" onclick="unitSetCat('kapasite')">Kapasite</div>
+        <div class="seg-opt" data-c="induktans" onclick="unitSetCat('induktans')">Endüktans</div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label class="label">Değer</label><input class="input" id="unitVal" type="number" step="any" placeholder="Ör: 1000" oninput="unitConvert()"></div>
+        <div class="field"><label class="label">Birimden</label><select class="input select" id="unitFrom" onchange="unitConvert()"></select></div>
+        <div class="field"><label class="label">Birime</label><select class="input select" id="unitTo" onchange="unitConvert()"></select></div>
+      </div>
+      <div class="result empty" id="unitRes">Çevirmek istediğin değeri gir.</div>
     </div>`;
+
   RC_BANDS = 5;
   initRc();
   ganoReset();
   drawVdiv(); drawLed(); drawTau(); drawDb(); drawOpamp(); drawTrafo(); drawPf(); drawKirch();
+  timer555Calc();
+  rcFiltCalc();
+  buildUnitSelects();
+  unitConvert();
 }
