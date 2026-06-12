@@ -685,6 +685,162 @@ function kirchCalc() {
     `I₁ = <b>${fmtNum(I1 * 1000)} mA</b> &nbsp;·&nbsp; I₂ = <b>${fmtNum(I2 * 1000)} mA</b> &nbsp;·&nbsp; I₃ = <b>${fmtNum(I3 * 1000)} mA</b>`;
 }
 
+/* ═══════════ THEVENİN / NORTON ═══════════ */
+let TH_MODE = 'th2no';
+function thSetMode(m) {
+  TH_MODE = m;
+  document.querySelectorAll('#thSeg .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.m === m));
+  document.getElementById('thFieldsTh').style.display = m === 'th2no' ? '' : 'none';
+  document.getElementById('thFieldsNo').style.display = m === 'no2th' ? '' : 'none';
+  thCalc();
+}
+function drawTh(vth, rth, isc) {
+  const W = 310, H = 138, cy = 68;
+  scRender('thSvg', W, H, `
+    ${SC.txt(68, 10, 'Thevenin', 'var(--acc)', 'middle', 9)}
+    ${SC.vs(22, cy, '')}
+    ${vth !== null ? SC.badge(22, cy - 30, fmtNum(vth) + ' V', 'var(--acc)', 'var(--acc-soft)') : ''}
+    ${SC.w(22, cy - 18, 22, 22)} ${SC.w(22, 22, 46, 22)}
+    ${SC.res(68, 22, 'Rth', rth !== null ? fmtOhm(rth) : '', 44, 20)}
+    ${SC.w(90, 22, 118, 22)} ${SC.dot(118, 22, 'var(--green)')}
+    ${SC.txt(122, 26, '+', 'var(--green)', 'start', 10)}
+    ${SC.w(22, cy + 18, 22, 114)} ${SC.w(22, 114, 118, 114)}
+    ${SC.dot(118, 114, 'var(--ink-3)')} ${SC.txt(122, 118, '−', 'var(--red)', 'start', 10)}
+    <line x1="156" y1="18" x2="156" y2="122" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="4,3"/>
+    ${SC.txt(156, cy + 5, '⇌', 'var(--ink-3)', 'middle', 13)}
+    ${SC.txt(242, 10, 'Norton', 'var(--green)', 'middle', 9)}
+    <circle cx="288" cy="${cy}" r="18" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.8"/>
+    <line x1="288" y1="${cy - 9}" x2="288" y2="${cy + 9}" stroke="var(--green)" stroke-width="1.5"/>
+    <polygon points="288,${cy - 16} 283,${cy - 7} 293,${cy - 7}" fill="var(--green)"/>
+    ${isc !== null ? SC.badge(288, cy - 30, fmtNum(isc) + ' A', 'var(--green)', 'var(--green-soft)') : ''}
+    ${SC.w(288, cy - 18, 288, 22)} ${SC.w(288, 22, 192, 22)}
+    ${SC.dot(192, 22, 'var(--green)')} ${SC.txt(188, 26, '+', 'var(--green)', 'end', 10)}
+    <line x1="248" y1="22" x2="248" y2="114" stroke="var(--acc)" stroke-width="1.8"/>
+    ${rth !== null ? SC.badge(262, cy, fmtOhm(rth), 'var(--acc)', 'var(--acc-soft)', 'start') : SC.txt(262, cy + 4, 'Rn', 'var(--ink-3)', 'start', 9)}
+    ${SC.w(288, cy + 18, 288, 114)} ${SC.w(288, 114, 192, 114)}
+    ${SC.dot(192, 114, 'var(--ink-3)')} ${SC.txt(188, 118, '−', 'var(--red)', 'end', 10)}
+  `);
+}
+function thCalc() {
+  const res = document.getElementById('thRes');
+  if (!res) return;
+  if (TH_MODE === 'th2no') {
+    const Vth = parseFloat(v('thVth')), Rth = parseFloat(v('thRth'));
+    if (isNaN(Vth) || isNaN(Rth)) { drawTh(isNaN(Vth) ? null : Vth, isNaN(Rth) ? null : Rth, null); res.className = 'result empty'; res.textContent = 'Vth ve Rth değerlerini gir.'; return; }
+    const Isc = Rth > 0 ? Vth / Rth : NaN;
+    drawTh(Vth, Rth, Isc);
+    res.className = 'result';
+    res.innerHTML = `Norton: I<sub>sc</sub> = <b>${fmtNum(Isc)} A</b> &nbsp;·&nbsp; R<sub>N</sub> = <b>${fmtOhm(Rth)}</b>`;
+  } else {
+    const Isc = parseFloat(v('thIsc')), Rn = parseFloat(v('thRn'));
+    if (isNaN(Isc) || isNaN(Rn)) { drawTh(null, isNaN(Rn) ? null : Rn, isNaN(Isc) ? null : Isc); res.className = 'result empty'; res.textContent = 'Isc ve Rn değerlerini gir.'; return; }
+    const Vth = Isc * Rn;
+    drawTh(Vth, Rn, Isc);
+    res.className = 'result';
+    res.innerHTML = `Thevenin: V<sub>th</sub> = <b>${fmtNum(Vth)} V</b> &nbsp;·&nbsp; R<sub>th</sub> = <b>${fmtOhm(Rn)}</b>`;
+  }
+}
+
+/* ═══════════ WHEATSTONE KÖPRÜSÜ ═══════════ */
+function drawWs(r1, r2, r3, rxVal, vs, vg) {
+  const W = 240, H = 202, lx = 58, brx = 182, cx = 120;
+  const topY = 28, r1y = 60, midY = 96, r3y = 130, botY = 170;
+  scRender('wsSvg', W, H, `
+    ${vs !== null ? SC.badge(cx, topY - 4, fmtNum(vs) + ' V', 'var(--acc)', 'var(--acc-soft)') : SC.txt(cx, topY + 2, 'Vs', 'var(--ink-3)')}
+    ${SC.w(cx, topY + 8, lx, topY + 8)} ${SC.w(lx, topY + 8, lx, r1y - 11)}
+    ${SC.w(cx, topY + 8, brx, topY + 8)} ${SC.w(brx, topY + 8, brx, r1y - 11)}
+    ${SC.res(lx, r1y, 'R1', r1 !== null ? fmtOhm(r1) : '', 42, 20)}
+    ${SC.res(brx, r1y, 'R2', r2 !== null ? fmtOhm(r2) : '', 42, 20)}
+    ${SC.w(lx, r1y + 10, lx, midY)} ${SC.dot(lx, midY)}
+    ${SC.w(brx, r1y + 10, brx, midY)} ${SC.dot(brx, midY)}
+    ${SC.w(lx, midY, brx, midY, 'var(--spark)')}
+    ${vg !== null ? SC.badge(cx, midY - 14, fmtNum(vg) + ' V', 'var(--spark)', 'var(--spark-soft)') : SC.txt(cx, midY - 13, 'Vg', 'var(--ink-3)', 'middle', 9)}
+    ${SC.res(lx, r3y, 'R3', r3 !== null ? fmtOhm(r3) : '', 42, 20)}
+    ${SC.res(brx, r3y, 'Rx', rxVal !== null ? fmtOhm(rxVal) : '?', 42, 20)}
+    ${SC.w(lx, r3y + 10, lx, botY)} ${SC.w(brx, r3y + 10, brx, botY)}
+    ${SC.w(lx, botY, brx, botY)} ${SC.gnd(cx, botY + 2)}
+  `);
+}
+function wsCalc() {
+  const R1 = parseFloat(v('wsR1')), R2 = parseFloat(v('wsR2')), R3 = parseFloat(v('wsR3'));
+  const Vs = parseFloat(v('wsVs')), RxIn = parseFloat(v('wsRx'));
+  const res = document.getElementById('wsRes');
+  if (!res) return;
+  if (isNaN(R1) || isNaN(R2) || isNaN(R3) || R1 <= 0 || R2 <= 0 || R3 <= 0) {
+    drawWs(null, null, null, null, null, null);
+    res.className = 'result empty'; res.textContent = 'R1, R2 ve R3 değerlerini gir.'; return;
+  }
+  const RxBal = R2 * R3 / R1;
+  const vsV = isNaN(Vs) ? null : Vs;
+  const rxShow = !isNaN(RxIn) ? RxIn : RxBal;
+  const vg = (vsV !== null && !isNaN(RxIn) && RxIn > 0)
+    ? vsV * (R3 / (R1 + R3) - RxIn / (R2 + RxIn))
+    : null;
+  drawWs(R1, R2, R3, rxShow, vsV, vg);
+  res.className = 'result';
+  let html = `Denge için Rx = R2·R3/R1 = <b>${fmtOhm(RxBal)}</b>`;
+  if (!isNaN(RxIn)) {
+    const ok = Math.abs(R1 * RxIn - R2 * R3) < 0.01 * R2 * R3;
+    html += `<br>Girilen Rx = ${fmtOhm(RxIn)} → ${ok ? '✅ Köprü dengede' : '⚠️ Köprü dengede değil'}`;
+  }
+  if (vg !== null) html += `<br>Galvanometre V<sub>g</sub> = <b>${fmtNum(vg)} V</b>`;
+  res.innerHTML = html;
+}
+
+/* ═══════════ SÜPERPOZISYON ═══════════ */
+function drawSup(v1val, v2val, va, live) {
+  const W = 288, H = 158, naX = 144, naY = 54, gndY = 134;
+  const v1X = 28, vr = 17, v2X = 260, r1cX = 84, r2cX = 204;
+  scRender('supSvg', W, H, `
+    <circle cx="${v1X}" cy="${naY}" r="${vr}" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.8"/>
+    <text x="${v1X+4}" y="${naY+4}" text-anchor="start" font-size="11" fill="var(--green)" font-weight="700">+</text>
+    <text x="${v1X-4}" y="${naY+4}" text-anchor="end" font-size="11" fill="var(--red)" font-weight="700">−</text>
+    ${live ? SC.badge(v1X, naY - vr - 10, fmtNum(v1val) + ' V', 'var(--acc)', 'var(--acc-soft)') : SC.txt(v1X, naY - vr - 8, 'V1', 'var(--ink-3)')}
+    ${SC.w(v1X + vr, naY, r1cX - 22, naY)}
+    ${SC.res(r1cX, naY, 'R1', '', 44, 20)}
+    ${SC.w(r1cX + 22, naY, naX, naY)}
+    ${SC.w(v1X - vr, naY, 10, naY)} ${SC.w(10, naY, 10, gndY)} ${SC.w(10, gndY, naX, gndY)}
+    ${SC.dot(naX, naY, 'var(--acc)')}
+    ${live ? SC.badge(naX, naY - 14, fmtNum(va) + ' V', 'var(--green)', 'var(--green-soft)') : SC.txt(naX, naY - 14, 'Va', 'var(--ink-3)')}
+    ${SC.txt(naX + 6, naY + 12, 'A', 'var(--ink-3)', 'start', 9)}
+    ${SC.wa(naX, naY + 5, naX, naY + 30, 'var(--acc)')}
+    ${SC.res(naX, naY + 44, 'R3', '', 40, 20)}
+    ${SC.w(naX, naY + 55, naX, gndY)} ${SC.dot(naX, gndY)} ${SC.gnd(naX, gndY + 2)}
+    <circle cx="${v2X}" cy="${naY}" r="${vr}" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.8"/>
+    <text x="${v2X-4}" y="${naY+4}" text-anchor="end" font-size="11" fill="var(--green)" font-weight="700">+</text>
+    <text x="${v2X+4}" y="${naY+4}" text-anchor="start" font-size="11" fill="var(--red)" font-weight="700">−</text>
+    ${live ? SC.badge(v2X, naY - vr - 10, fmtNum(v2val) + ' V', 'var(--acc)', 'var(--acc-soft)') : SC.txt(v2X, naY - vr - 8, 'V2', 'var(--ink-3)')}
+    ${SC.w(v2X - vr, naY, r2cX + 22, naY)}
+    ${SC.res(r2cX, naY, 'R2', '', 44, 20)}
+    ${SC.w(r2cX - 22, naY, naX, naY)}
+    ${SC.w(v2X + vr, naY, W - 10, naY)} ${SC.w(W - 10, naY, W - 10, gndY)} ${SC.w(W - 10, gndY, naX, gndY)}
+  `);
+}
+function supCalc() {
+  const res = document.getElementById('supRes');
+  if (!res) return;
+  const V1 = parseFloat(v('supV1')), V2 = parseFloat(v('supV2'));
+  const R1 = parseFloat(v('supR1')), R2 = parseFloat(v('supR2')), R3 = parseFloat(v('supR3'));
+  if (isNaN(V1) || isNaN(R1) || isNaN(R2) || isNaN(R3) || R1 <= 0 || R2 <= 0 || R3 <= 0) {
+    drawSup(null, null, null, false);
+    res.className = 'result empty'; res.textContent = 'V1, R1, R2, R3 zorunlu; V2 opsiyonel (0 V varsayılır).'; return;
+  }
+  const vv2 = isNaN(V2) ? 0 : V2;
+  const R23 = R2 * R3 / (R2 + R3);
+  const Va1 = V1 * R23 / (R1 + R23);
+  const R13 = R1 * R3 / (R1 + R3);
+  const Va2 = vv2 * R13 / (R2 + R13);
+  const Va = Va1 + Va2;
+  const I1 = (V1 - Va) / R1, I2 = (vv2 - Va) / R2, I3 = Va / R3;
+  drawSup(V1, vv2, Va, true);
+  res.className = 'result';
+  res.innerHTML =
+    `<b>Adım 1</b> (V2 kısa): V<sub>A1</sub> = V1·(R₂‖R₃)/(R₁+R₂‖R₃) = <b>${fmtNum(Va1)} V</b><br>` +
+    `<b>Adım 2</b> (V1 kısa): V<sub>A2</sub> = V2·(R₁‖R₃)/(R₂+R₁‖R₃) = <b>${fmtNum(Va2)} V</b><br>` +
+    `<b>Toplam</b> V<sub>A</sub> = V<sub>A1</sub>+V<sub>A2</sub> = <b>${fmtNum(Va)} V</b><br>` +
+    `I₁ = <b>${fmtNum(I1 * 1000)} mA</b> &nbsp;·&nbsp; I₂ = <b>${fmtNum(I2 * 1000)} mA</b> &nbsp;·&nbsp; I₃ = <b>${fmtNum(I3 * 1000)} mA</b>`;
+}
+
 /* ═══════════ 555 ZAMANLAYICI ═══════════ */
 let TIMER555_MODE = 'astable';
 function timer555SetMode(m) {
@@ -1060,6 +1216,75 @@ function buildTools() {
 
     <div class="tool wide">
       <div class="tool-head">
+        <div class="tool-ico" style="background:var(--acc-soft);border-color:var(--acc-line)">Th</div>
+        <div><div class="tool-title">Thevenin / Norton Dönüşümü</div><div class="tool-formula">V<sub>th</sub> = I<sub>sc</sub>·R<sub>th</sub> &nbsp;·&nbsp; iki eşdeğer devre</div></div>
+      </div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="thSvg"></div></div>
+        <div>
+          <div class="seg" id="thSeg" style="margin-bottom:14px">
+            <div class="seg-opt active" data-m="th2no" onclick="thSetMode('th2no')">Thevenin → Norton</div>
+            <div class="seg-opt" data-m="no2th" onclick="thSetMode('no2th')">Norton → Thevenin</div>
+          </div>
+          <div id="thFieldsTh">
+            <div class="field"><label class="label">V<sub>th</sub> — açık devre gerilimi (V)</label><input class="input" id="thVth" type="number" placeholder="Ör: 12" oninput="thCalc()"></div>
+            <div class="field"><label class="label">R<sub>th</sub> — Thevenin direnci (Ω)</label><input class="input" id="thRth" type="number" placeholder="Ör: 100" oninput="thCalc()"></div>
+          </div>
+          <div id="thFieldsNo" style="display:none">
+            <div class="field"><label class="label">I<sub>sc</sub> — kısa devre akımı (A)</label><input class="input" id="thIsc" type="number" placeholder="Ör: 0.12" oninput="thCalc()"></div>
+            <div class="field"><label class="label">R<sub>n</sub> — Norton direnci (Ω)</label><input class="input" id="thRn" type="number" placeholder="Ör: 100" oninput="thCalc()"></div>
+          </div>
+          <div class="result empty" id="thRes">Vth ve Rth değerlerini gir.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--spark-soft);border-color:var(--spark)">⬡</div>
+        <div><div class="tool-title">Wheatstone Köprüsü</div><div class="tool-formula">R₁·Rx = R₂·R₃ &nbsp;·&nbsp; Rx = R₂·R₃/R₁</div></div>
+      </div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="wsSvg"></div></div>
+        <div>
+          <div class="field-row">
+            <div class="field"><label class="label">R1 (Ω)</label><input class="input" id="wsR1" type="number" placeholder="Ör: 1000" oninput="wsCalc()"></div>
+            <div class="field"><label class="label">R2 (Ω)</label><input class="input" id="wsR2" type="number" placeholder="Ör: 1000" oninput="wsCalc()"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label class="label">R3 (Ω)</label><input class="input" id="wsR3" type="number" placeholder="Ör: 2200" oninput="wsCalc()"></div>
+            <div class="field"><label class="label">Rx opsiyonel (Ω)</label><input class="input" id="wsRx" type="number" placeholder="Bilinmeyen / kontrol" oninput="wsCalc()"></div>
+          </div>
+          <div class="field"><label class="label">Vs (V) opsiyonel</label><input class="input" id="wsVs" type="number" placeholder="Ör: 5" oninput="wsCalc()"></div>
+          <div class="result empty" id="wsRes">R1, R2 ve R3 değerlerini gir.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
+        <div class="tool-ico" style="background:var(--green-soft);border-color:var(--green)">Σ</div>
+        <div><div class="tool-title">Süperpozisyon Hesabı</div><div class="tool-formula">V<sub>A</sub> = V<sub>A1</sub>(V₂=0) + V<sub>A2</sub>(V₁=0)</div></div>
+      </div>
+      <div class="scm-layout">
+        <div class="scm-stage"><div id="supSvg"></div></div>
+        <div>
+          <div class="field-row">
+            <div class="field"><label class="label">V1 (V)</label><input class="input" id="supV1" type="number" placeholder="Kaynak 1" oninput="supCalc()"></div>
+            <div class="field"><label class="label">V2 (V) opsiyonel</label><input class="input" id="supV2" type="number" placeholder="Kaynak 2 (0 V)" oninput="supCalc()"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label class="label">R1 (Ω)</label><input class="input" id="supR1" type="number" placeholder="Ör: 1000" oninput="supCalc()"></div>
+            <div class="field"><label class="label">R2 (Ω)</label><input class="input" id="supR2" type="number" placeholder="Ör: 2200" oninput="supCalc()"></div>
+            <div class="field"><label class="label">R3 (Ω)</label><input class="input" id="supR3" type="number" placeholder="Ör: 3300" oninput="supCalc()"></div>
+          </div>
+          <div class="result empty" id="supRes">V1, R1, R2, R3 zorunlu; V2 opsiyonel (0 V varsayılır).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool wide">
+      <div class="tool-head">
         <div class="tool-ico" style="background:var(--spark-soft);border-color:var(--spark)">555</div>
         <div><div class="tool-title">555 Zamanlayıcı</div><div class="tool-formula">Astable / Monostable · frekans & duty cycle</div></div>
       </div>
@@ -1126,6 +1351,7 @@ function buildTools() {
   initRc();
   ganoReset();
   drawVdiv(); drawLed(); drawTau(); drawDb(); drawOpamp(); drawTrafo(); drawPf(); drawKirch();
+  thCalc(); wsCalc(); drawSup(null, null, null, false);
   timer555Calc();
   rcFiltCalc();
   buildUnitSelects();
