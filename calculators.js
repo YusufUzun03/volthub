@@ -249,35 +249,50 @@ function drawResistor(bands) {
 
 /* ═══════════ SVG SCHEMATIC HELPERS ═══════════ */
 const SC = {
-  w:  (x1,y1,x2,y2,c='var(--ink)')=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>`,
-  res:(cx,cy,lbl='',sub='',w=42,h=22)=>{const[x,y]=[cx-w/2,cy-h/2];return`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="var(--surface)" stroke="var(--acc)" stroke-width="1.5"/><text x="${cx}" y="${sub?cy-2:cy+4}" text-anchor="middle" font-size="9" font-weight="600" fill="var(--ink-2)" font-family="var(--sans)">${lbl}</text>${sub?`<text x="${cx}" y="${cy+9}" text-anchor="middle" font-size="8" fill="var(--ink-3)" font-family="var(--mono)">${sub}</text>`:''}`},
-  cap:(cx,cy,lbl='',sub='')=>`<line x1="${cx}" y1="${cy-16}" x2="${cx}" y2="${cy-5}" stroke="var(--ink)" stroke-width="1.5"/><line x1="${cx-13}" y1="${cy-5}" x2="${cx+13}" y2="${cy-5}" stroke="var(--acc)" stroke-width="2.5"/><line x1="${cx-13}" y1="${cy+5}" x2="${cx+13}" y2="${cy+5}" stroke="var(--acc)" stroke-width="2.5"/><line x1="${cx}" y1="${cy+5}" x2="${cx}" y2="${cy+16}" stroke="var(--ink)" stroke-width="1.5"/>${lbl?`<text x="${cx+18}" y="${cy}" text-anchor="start" font-size="9" font-weight="600" fill="var(--ink-2)" font-family="var(--sans)">${lbl}</text>`:''} ${sub?`<text x="${cx+18}" y="${cy+11}" text-anchor="start" font-size="8" fill="var(--ink-3)" font-family="var(--mono)">${sub}</text>`:''}`,
-  ind:(cx,cy,lbl='',sub='')=>{let a='';for(let i=0;i<3;i++)a+=`<path d="M${cx-15+i*10},${cy} a5,5 0 0,1 10,0" fill="none" stroke="var(--acc)" stroke-width="1.8"/>`;return`<line x1="${cx-20}" y1="${cy}" x2="${cx-15}" y2="${cy}" stroke="var(--ink)" stroke-width="1.5"/>${a}<line x1="${cx+15}" y1="${cy}" x2="${cx+20}" y2="${cy}" stroke="var(--ink)" stroke-width="1.5"/>${lbl?`<text x="${cx}" y="${cy-14}" text-anchor="middle" font-size="9" font-weight="600" fill="var(--ink-2)" font-family="var(--sans)">${lbl}</text>`:''} ${sub?`<text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="8" fill="var(--ink-3)" font-family="var(--mono)">${sub}</text>`:''}`;},
-  vs: (cx,cy,lbl='')=>`<circle cx="${cx}" cy="${cy}" r="16" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/><text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="12" fill="var(--green)">+</text><text x="${cx}" y="${cy+10}" text-anchor="middle" font-size="12" fill="var(--red)">−</text>${lbl?`<text x="${cx}" y="${cy-22}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--acc)" font-family="var(--sans)">${lbl}</text>`:''}`,
-  gnd:(x,y)=>`<line x1="${x-14}" y1="${y}" x2="${x+14}" y2="${y}" stroke="var(--ink)" stroke-width="2"/><line x1="${x-9}" y1="${y+5}" x2="${x+9}" y2="${y+5}" stroke="var(--ink)" stroke-width="1.5"/><line x1="${x-4}" y1="${y+10}" x2="${x+4}" y2="${y+10}" stroke="var(--ink)" stroke-width="1"/>`,
-  dot:(x,y,c='var(--acc)')=>`<circle cx="${x}" cy="${y}" r="3.5" fill="${c}"/>`,
+  DEFS:`<defs>
+    <filter id="scSh" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="rgba(0,0,0,0.16)"/>
+    </filter>
+    <marker id="scArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0,1.5 L8.5,5 L0,8.5 Z" fill="var(--acc)"/>
+    </marker>
+    <marker id="scArrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0,1.5 L8.5,5 L0,8.5 Z" fill="var(--green)"/>
+    </marker>
+  </defs>`,
+  w:  (x1,y1,x2,y2,c='var(--ink)')=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>`,
+  wa: (x1,y1,x2,y2,c='var(--acc)')=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="1.8" stroke-linecap="round" marker-end="url(#scArr)"/>`,
+  wg: (x1,y1,x2,y2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" marker-end="url(#scArrG)"/>`,
+  res:(cx,cy,lbl='',sub='',w=44,h=22)=>{const[rx,ry]=[cx-w/2,cy-h/2];return`<rect x="${rx}" y="${ry}" width="${w}" height="${h}" rx="4" fill="var(--surface)" stroke="var(--acc)" stroke-width="1.8" filter="url(#scSh)"/><rect x="${rx+3}" y="${ry+2}" width="${w-6}" height="5" rx="2" fill="rgba(255,255,255,.26)"/><text x="${cx}" y="${sub?cy-1:cy+4.5}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ink-2)" font-family="var(--sans)">${lbl}</text>${sub?`<text x="${cx}" y="${cy+10}" text-anchor="middle" font-size="8.5" fill="var(--acc)" font-family="var(--mono)">${sub}</text>`:''}`},
+  cap:(cx,cy,lbl='',sub='')=>`<line x1="${cx}" y1="${cy-18}" x2="${cx}" y2="${cy-7}" stroke="var(--ink)" stroke-width="1.8"/><rect x="${cx-14}" y="${cy-7}" width="28" height="4" rx="2" fill="var(--acc)"/><rect x="${cx-14}" y="${cy+3}" width="28" height="4" rx="2" fill="var(--acc)"/><line x1="${cx}" y1="${cy+7}" x2="${cx}" y2="${cy+18}" stroke="var(--ink)" stroke-width="1.8"/>${lbl?`<text x="${cx+20}" y="${cy+1}" text-anchor="start" font-size="9.5" font-weight="700" fill="var(--ink-2)" font-family="var(--sans)">${lbl}</text>`:''} ${sub?`<text x="${cx+20}" y="${cy+13}" text-anchor="start" font-size="8.5" fill="var(--acc)" font-family="var(--mono)">${sub}</text>`:''}`,
+  ind:(cx,cy,lbl='',sub='')=>{let a='';for(let i=0;i<4;i++)a+=`<path d="M${cx-18+i*9},${cy} a4.5,5.5 0 0,1 9,0" fill="none" stroke="var(--acc)" stroke-width="2.2" stroke-linecap="round"/>`;return`<line x1="${cx-22}" y1="${cy}" x2="${cx-18}" y2="${cy}" stroke="var(--ink)" stroke-width="1.8"/>${a}<line x1="${cx+18}" y1="${cy}" x2="${cx+22}" y2="${cy}" stroke="var(--ink)" stroke-width="1.8"/>${lbl?`<text x="${cx}" y="${cy-18}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ink-2)" font-family="var(--sans)">${lbl}</text>`:''} ${sub?`<text x="${cx}" y="${cy+20}" text-anchor="middle" font-size="8.5" fill="var(--acc)" font-family="var(--mono)">${sub}</text>`:''}`;},
+  vs: (cx,cy,lbl='')=>`<circle cx="${cx}" cy="${cy}" r="18" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.8" filter="url(#scSh)"/><circle cx="${cx}" cy="${cy}" r="13" fill="none" stroke="var(--line-2)" stroke-width="0.8"/><text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="13" fill="var(--green)" font-weight="700">+</text><text x="${cx}" y="${cy+11}" text-anchor="middle" font-size="13" fill="var(--red)" font-weight="700">−</text>${lbl?`<text x="${cx}" y="${cy-26}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--acc)" font-family="var(--sans)">${lbl}</text>`:''}`,
+  gnd:(x,y)=>`<line x1="${x-15}" y1="${y}" x2="${x+15}" y2="${y}" stroke="var(--ink)" stroke-width="2.2"/><line x1="${x-9}" y1="${y+5}" x2="${x+9}" y2="${y+5}" stroke="var(--ink)" stroke-width="1.8"/><line x1="${x-4}" y1="${y+10}" x2="${x+4}" y2="${y+10}" stroke="var(--ink)" stroke-width="1.4"/>`,
+  dot:(x,y,c='var(--acc)')=>`<circle cx="${x}" cy="${y}" r="4.5" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.8" fill="rgba(255,255,255,.45)"/>`,
   txt:(x,y,t,c='var(--ink)',a='middle',s=11)=>`<text x="${x}" y="${y}" text-anchor="${a}" font-size="${s}" fill="${c}" font-family="var(--sans)">${t}</text>`,
   mono:(x,y,t,c='var(--ink-3)',a='middle',s=10)=>`<text x="${x}" y="${y}" text-anchor="${a}" font-size="${s}" fill="${c}" font-family="var(--mono)">${t}</text>`,
+  badge:(x,y,t,c='var(--acc)',bg='var(--acc-soft)',a='middle')=>{const pw=t.length*6.2+14;const bx=a==='start'?x:a==='end'?x-pw:x-pw/2;return`<rect x="${bx}" y="${y-13}" width="${pw}" height="17" rx="8.5" fill="${bg}"/><text x="${bx+pw/2}" y="${y}" text-anchor="middle" font-size="9.5" font-weight="700" fill="${c}" font-family="var(--mono)">${t}</text>`},
 };
-function scRender(id,W,H,body){const el=document.getElementById(id);if(el)el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto">${body}</svg>`;}
+function scRender(id,W,H,body){const el=document.getElementById(id);if(el)el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto">${SC.DEFS}${body}</svg>`;}
 
 /* ── Draw: Voltaj Bölücü ── */
 function drawVdiv(){
   const Vin=parseFloat(v('vdVin')),R1=parseFloat(v('vdR1')),R2=parseFloat(v('vdR2'));
   const Vo=(!isNaN(Vin)&&!isNaN(R1)&&!isNaN(R2)&&R1+R2>0)?Vin*R2/(R1+R2):null;
-  const cx=75;
-  scRender('vdSvg',200,190,`
-    ${SC.txt(cx,13,!isNaN(Vin)?fmtNum(Vin)+' V':'Vin','var(--acc)')}
-    ${SC.w(cx,15,cx,43)}
+  const live=Vo!==null;
+  const cx=80,W=210,H=198;
+  scRender('vdSvg',W,H,`
+    ${live?SC.badge(cx,10,fmtNum(Vin)+' V','var(--acc)','var(--acc-soft)'):SC.txt(cx,12,'Vin','var(--ink-3)')}
+    ${SC.wa(cx,15,cx,42)}
     ${SC.res(cx,55,'R1',!isNaN(R1)?fmtOhm(R1):'')}
-    ${SC.w(cx,67,cx,90)}
+    ${SC.wa(cx,67,cx,88)}
     ${SC.dot(cx,90)}
-    ${SC.w(cx,90,cx+60,90)}
-    ${SC.txt(cx+64,94,Vo!==null?fmtNum(Vo)+' V':'Vout','var(--green)','start')}
-    ${SC.w(cx,91,cx,109)}
-    ${SC.res(cx,120,'R2',!isNaN(R2)?fmtOhm(R2):'')}
-    ${SC.w(cx,132,cx,155)}
-    ${SC.gnd(cx,157)}
+    ${live?SC.wg(cx,90,cx+55,90):SC.w(cx,90,cx+55,90,'var(--line-2)')}
+    ${live?SC.badge(cx+60,94,fmtNum(Vo)+' V','var(--green)','var(--green-soft)','start'):SC.txt(cx+60,94,'Vout','var(--ink-3)','start')}
+    ${SC.wa(cx,91,cx,110)}
+    ${SC.res(cx,122,'R2',!isNaN(R2)?fmtOhm(R2):'')}
+    ${SC.w(cx,134,cx,160)}
+    ${SC.gnd(cx,162)}
   `);
 }
 
@@ -285,42 +300,44 @@ function drawVdiv(){
 function drawLed(){
   const Vs=parseFloat(v('ledVs')),Vf=parseFloat(v('ledVf')),If=parseFloat(v('ledIf'));
   const R=(!isNaN(Vs)&&!isNaN(Vf)&&!isNaN(If)&&If>0&&Vs>Vf)?(Vs-Vf)/(If/1000):null;
-  const cx=80,lY=168;
-  scRender('ledSvg',200,250,`
-    ${SC.vs(cx,36,!isNaN(Vs)?fmtNum(Vs)+' V':'Vs')}
-    ${SC.w(cx,52,cx,68)}
-    ${SC.res(cx,80,'R',R?fmtOhm(R):'?')}
-    ${!isNaN(If)?SC.mono(cx+26,82,fmtNum(If)+' mA','var(--green)','start',9):''}
-    ${SC.w(cx,92,cx,lY-14)}
-    <polygon points="${cx-14},${lY-14} ${cx+14},${lY-14} ${cx},${lY+8}" fill="var(--spark-soft)" stroke="var(--spark)" stroke-width="1.5"/>
-    <line x1="${cx-15}" y1="${lY+8}" x2="${cx+15}" y2="${lY+8}" stroke="var(--spark)" stroke-width="2.5"/>
-    <line x1="${cx+16}" y1="${lY-8}" x2="${cx+26}" y2="${lY-22}" stroke="var(--spark)" stroke-width="1.2" stroke-linecap="round"/>
-    <line x1="${cx+22}" y1="${lY-2}" x2="${cx+32}" y2="${lY-16}" stroke="var(--spark)" stroke-width="1.2" stroke-linecap="round"/>
-    ${!isNaN(Vf)?SC.mono(cx-18,lY,'Vf='+fmtNum(Vf)+'V','var(--spark)','end',9):''}
-    ${SC.w(cx,lY+8,cx,218)}
-    ${SC.gnd(cx,220)}
+  const live=R!==null;
+  const cx=84,lY=170,W=215,H=258;
+  scRender('ledSvg',W,H,`
+    ${live?SC.badge(cx,8,fmtNum(Vs)+' V','var(--acc)','var(--acc-soft)'):SC.txt(cx,10,'Vs','var(--ink-3)')}
+    ${SC.vs(cx,34,'')}
+    ${SC.wa(cx,52,cx,68)}
+    ${SC.res(cx,80,'R',live?fmtOhm(R):'?')}
+    ${!isNaN(If)?SC.badge(cx+28,78,fmtNum(If)+' mA','var(--green)','var(--green-soft)','start'):''}
+    ${SC.wa(cx,92,cx,lY-16,'var(--spark)')}
+    <polygon points="${cx-14},${lY-16} ${cx+14},${lY-16} ${cx},${lY+10}" fill="var(--spark-soft)" stroke="var(--spark)" stroke-width="2"/>
+    <line x1="${cx-16}" y1="${lY+10}" x2="${cx+16}" y2="${lY+10}" stroke="var(--spark)" stroke-width="3"/>
+    <line x1="${cx+18}" y1="${lY-6}" x2="${cx+30}" y2="${lY-22}" stroke="var(--spark)" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="${cx+24}" y1="${lY+1}" x2="${cx+36}" y2="${lY-15}" stroke="var(--spark)" stroke-width="1.5" stroke-linecap="round"/>
+    ${!isNaN(Vf)?SC.badge(cx-28,lY,'Vf='+fmtNum(Vf)+'V','var(--spark-deep)','var(--spark-soft)','end'):''}
+    ${SC.w(cx,lY+10,cx,222)}
+    ${SC.gnd(cx,224)}
   `);
 }
 
 /* ── Draw: RC/RL ── */
 function drawTau(){
   const R=parseFloat(v('tauR')),C=parseFloat(v('tauC')),L=parseFloat(v('tauL'));
-  const hasC=!isNaN(C)&&C>0, hasL=!isNaN(L)&&L>0, showL=hasL&&!hasC;
+  const hasC=!isNaN(C)&&C>0,hasL=!isNaN(L)&&L>0,showL=hasL&&!hasC;
   const fmtT=t=>t>=1?fmtNum(t)+' s':t>=0.001?fmtNum(t*1000)+' ms':fmtNum(t*1e6)+' µs';
   const tau=showL&&!isNaN(R)&&R>0?(L/1000)/R:(!isNaN(R)&&R>0&&hasC?R*C/1e6:null);
-  const W=260,H=110,cy=62;
-  const comp=showL?SC.ind(175,cy,'L',hasL?fmtNum(L)+' mH':''):SC.cap(175,cy,'C',hasC?fmtNum(C)+' µF':'');
+  const W=268,H=118,cy=68;
+  const comp=showL?SC.ind(180,cy,'L',hasL?fmtNum(L)+' mH':''):SC.cap(180,cy,'C',hasC?fmtNum(C)+' µF':'');
   scRender('tauSvg',W,H,`
-    ${tau?SC.txt(W/2,14,'τ = '+fmtT(tau),'var(--acc)'):SC.txt(W/2,14,'τ = R·'+(showL?'L/R':'C'),'var(--ink-3)')}
-    ${SC.vs(22,cy)}
-    ${SC.w(22,cy-16,22,22)}${SC.w(22,22,238,22)}${SC.w(238,22,238,cy)}
-    ${SC.w(238,cy,196,cy)}
+    ${tau?SC.badge(W/2,14,'τ = '+fmtT(tau),'var(--acc)','var(--acc-soft)'):SC.txt(W/2,14,'τ = R·'+(showL?'L/R':'C'),'var(--ink-3)')}
+    ${SC.vs(24,cy)}
+    ${SC.w(24,cy-18,24,24)}${SC.w(24,24,242,24)}${SC.w(242,24,242,cy)}
+    ${SC.w(242,cy,202,cy)}
     ${comp}
-    ${SC.w(154,cy,113,cy)}
-    ${SC.res(92,cy,'R',!isNaN(R)?fmtOhm(R):'')}
-    ${SC.w(71,cy,38,cy)}
-    ${SC.w(22,cy+16,22,H-8)}${SC.w(22,H-8,238,H-8)}
-    ${SC.gnd(130,H-6)}
+    ${SC.w(158,cy,116,cy)}
+    ${SC.res(94,cy,'R',!isNaN(R)?fmtOhm(R):'')}
+    ${SC.w(72,cy,42,cy)}
+    ${SC.w(24,cy+18,24,H-8)}${SC.w(24,H-8,242,H-8)}
+    ${SC.gnd(133,H-6)}
   `);
 }
 
@@ -328,20 +345,20 @@ function drawTau(){
 function drawDb(){
   const ratio=parseFloat(v('dbRatio')),db=parseFloat(v('dbDb'));
   const factor=DB_MODE==='v'?20:10;
-  const hasRatio=!isNaN(ratio)&&ratio>0, hasDb=!isNaN(db);
+  const hasRatio=!isNaN(ratio)&&ratio>0,hasDb=!isNaN(db);
   const inVal=hasRatio?fmtNum(ratio):hasDb?fmtNum(Math.pow(10,db/factor)):'A';
-  const outVal=hasRatio?fmtNum(factor*Math.log10(ratio))+' dB':hasDb?fmtNum(db)+' dB':'B·dB';
-  const W=220,H=100,bX=75,bY=28,bW=70,bH=44;
+  const outVal=hasRatio?fmtNum(factor*Math.log10(ratio))+' dB':hasDb?fmtNum(db)+' dB':'B dB';
+  const live=hasRatio||hasDb;
+  const W=234,H=108,bX=82,bY=30,bW=70,bH=48;
   scRender('dbSvg',W,H,`
-    ${SC.txt(35,H/2+4,inVal,'var(--ink)','middle',11)}
-    ${SC.w(55,H/2,bX,H/2)}
-    <polygon points="${bX-6},${H/2-5} ${bX},${H/2} ${bX-6},${H/2+5}" fill="var(--acc)"/>
-    <rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" rx="6" fill="var(--acc-soft)" stroke="var(--acc)" stroke-width="1.5"/>
-    ${SC.txt(bX+bW/2,bY+bH/2-4,DB_MODE==='v'?'×20·log':'×10·log','var(--acc-ink)','middle',9)}
-    ${SC.txt(bX+bW/2,bY+bH/2+8,'Kazanç Bloğu','var(--ink-3)','middle',8)}
-    ${SC.w(bX+bW,H/2,W-55,H/2)}
-    <polygon points="${W-54},${H/2-5} ${W-48},${H/2} ${W-54},${H/2+5}" fill="var(--acc)"/>
-    ${SC.txt(W-30,H/2+4,outVal,'var(--green)','middle',11)}
+    ${live?SC.badge(34,H/2+4,inVal,'var(--ink-2)','var(--surface)'):SC.txt(34,H/2+4,'A','var(--ink-3)')}
+    ${SC.wa(58,H/2,bX,H/2)}
+    <rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" rx="8" fill="var(--acc-soft)" stroke="var(--acc)" stroke-width="1.8" filter="url(#scSh)"/>
+    <rect x="${bX+4}" y="${bY+3}" width="${bW-8}" height="8" rx="4" fill="rgba(255,255,255,.20)"/>
+    ${SC.txt(bX+bW/2,bY+bH/2-3,DB_MODE==='v'?'20·log':'10·log','var(--acc)','middle',9.5)}
+    ${SC.txt(bX+bW/2,bY+bH/2+10,'dB Blok','var(--ink-3)','middle',8)}
+    ${SC.wa(bX+bW,H/2,W-58,H/2)}
+    ${live?SC.badge(W-32,H/2+4,outVal,'var(--green)','var(--green-soft)'):SC.txt(W-32,H/2+4,'B dB','var(--ink-3)')}
   `);
 }
 
@@ -349,59 +366,51 @@ function drawDb(){
 function drawOpamp(){
   const Rf=parseFloat(v('opRf')),R1=parseFloat(v('opR1'));
   const Av=(!isNaN(Rf)&&!isNaN(R1)&&R1>0)?(OP_MODE==='inv'?-(Rf/R1):1+Rf/R1):null;
-  const W=280,H=185,ox=148,oy=95; // op-amp triangle tip at (ox+50,oy)
-  // triangle: left edge (ox,oy-32) to (ox,oy+32), tip (ox+50,oy)
+  const W=292,H=190,ox=148,oy=95;
   const inv=OP_MODE==='inv';
-  // pin positions
-  const pinMinus=[ox,oy-16], pinPlus=[ox,oy+16], pinOut=[ox+50,oy];
-  // inv: R1 from (20,oy-16) to pinMinus; Rf from pinOut arcs back to pinMinus junction
-  const r1X1=18, r1Y=oy-16, r1CX=60, jX=100; // junction where R1 meets inv input wire
-  const rfTopY=28;
+  const outX=ox+52,rfTopY=28,jX=116;
   scRender('opSvg',W,H,`
     <!-- Op-amp body -->
-    <polygon points="${ox},${oy-32} ${ox},${oy+32} ${ox+50},${oy}" fill="var(--acc-soft)" stroke="var(--acc)" stroke-width="2"/>
-    <text x="${ox+14}" y="${oy-8}" font-size="10" fill="var(--acc-ink)" font-family="var(--sans)">−</text>
-    <text x="${ox+14}" y="${oy+18}" font-size="10" fill="var(--acc-ink)" font-family="var(--sans)">+</text>
-    ${Av!==null?SC.txt(ox+25,oy+5,'Av='+fmtNum(Av),'var(--acc)','middle',9):''}
+    <polygon points="${ox},${oy-36} ${ox},${oy+36} ${ox+52},${oy}" fill="var(--acc-soft)" stroke="var(--acc)" stroke-width="2.2" filter="url(#scSh)"/>
+    <rect x="${ox+2}" y="${oy-36}" width="18" height="72" rx="3" fill="rgba(255,255,255,.10)"/>
+    <text x="${ox+12}" y="${oy-10}" font-size="12" fill="var(--acc-ink)" font-weight="700">−</text>
+    <text x="${ox+12}" y="${oy+19}" font-size="12" fill="var(--acc-ink)" font-weight="700">+</text>
+    ${Av!==null?SC.badge(ox+26,oy+5,'Av='+fmtNum(Av),'var(--acc)','var(--acc-soft-2)'):SC.txt(ox+26,oy+4,'Av','var(--ink-3)')}
 
-    ${inv ? `
-    <!-- Inverting: Vin─R1─junctionNode─R2─(-)pin, Rf from junction back from output -->
-    ${SC.txt(r1X1,r1Y+4,'Vin','var(--ink)','start',10)}
-    ${SC.w(r1X1+22,r1Y,r1CX-21,r1Y)}
-    ${SC.res(r1CX,r1Y,'R1',!isNaN(R1)?fmtOhm(R1):'')}
-    ${SC.w(r1CX+21,r1Y,jX,r1Y)}
-    ${SC.dot(jX,r1Y)}
-    ${SC.w(jX,r1Y,ox,r1Y)}
-    <!-- Rf feedback arc over top -->
-    ${SC.w(jX,r1Y,jX,rfTopY)}
-    ${SC.res(165,rfTopY,'Rf',!isNaN(Rf)?fmtOhm(Rf):'')}
-    ${SC.w(jX,rfTopY,120,rfTopY)}
-    ${SC.w(186,rfTopY,pinOut[0]+20,rfTopY)}
-    ${SC.w(pinOut[0]+20,rfTopY,pinOut[0]+20,oy)}
-    ${SC.dot(pinOut[0]+20,oy)}
-    <!-- (+) to GND -->
-    ${SC.w(ox,oy+16,ox-16,oy+16)}${SC.gnd(ox-20,oy+18)}
-    ` : `
-    <!-- Non-inverting: Vin─(+)pin, R1 from (-)─GND, Rf from (-)─output -->
-    ${SC.txt(18,oy+20,'Vin','var(--ink)','start',10)}
-    ${SC.w(40,oy+16,ox,oy+16)}
-    <!-- R1 from (-) to GND -->
-    ${SC.w(ox,oy-16,ox-20,oy-16)}${SC.w(ox-20,oy-16,ox-20,rfTopY)}
-    ${SC.res(ox-20,rfTopY,'R1',!isNaN(R1)?fmtOhm(R1):'',42,22)}
-    ${SC.w(ox-20,rfTopY+11,ox-20,20)}${SC.gnd(ox-20,22)}
-    <!-- Rf from output back to (-) junction -->
-    ${SC.dot(ox-20,oy-16)}
-    ${SC.w(ox-20,oy-16,ox-20,rfTopY-11)}
-    ${SC.w(pinOut[0]+20,oy,pinOut[0]+20,rfTopY-11)}
+    ${inv?`
+    <!-- Inverting: Vin─R1─junction─(-)pin; Rf feedback from junction over top to output -->
+    ${SC.txt(14,oy-14,'Vin','var(--ink-2)','start',10)}
+    ${SC.w(36,oy-18,58,oy-18)}
+    ${SC.res(80,oy-18,'R1',!isNaN(R1)?fmtOhm(R1):'')}
+    ${SC.w(102,oy-18,jX,oy-18)}
+    ${SC.dot(jX,oy-18)}
+    ${SC.w(jX,oy-18,ox,oy-18)}
+    ${SC.w(jX,oy-18,jX,rfTopY)}
+    ${SC.res(178,rfTopY,'Rf',!isNaN(Rf)?fmtOhm(Rf):'')}
+    ${SC.w(jX,rfTopY,156,rfTopY)}
+    ${SC.w(200,rfTopY,outX+22,rfTopY)}
+    ${SC.w(outX+22,rfTopY,outX+22,oy)}
+    ${SC.dot(outX+22,oy)}
+    ${SC.w(ox,oy+18,ox-20,oy+18)}${SC.gnd(ox-24,oy+20)}
+    `:`
+    <!-- Non-inverting: Vin─(+)pin; R1 from (-)─GND top; Rf from output back to (-) -->
+    ${SC.txt(14,oy+22,'Vin','var(--ink-2)','start',10)}
+    ${SC.w(36,oy+18,ox,oy+18)}
+    ${SC.w(ox,oy-18,ox-22,oy-18)}
+    ${SC.w(ox-22,oy-18,ox-22,rfTopY+11)}
+    ${SC.res(ox-22,rfTopY,'R1',!isNaN(R1)?fmtOhm(R1):'',42,22)}
+    ${SC.w(ox-22,rfTopY-11,ox-22,16)}${SC.gnd(ox-22,18)}
+    ${SC.dot(ox-22,oy-18)}
+    ${SC.w(ox-22,oy-18,ox-22,rfTopY-11)}
+    ${SC.w(outX+22,oy,outX+22,rfTopY-11)}
     ${SC.res(ox+30,rfTopY-11,'Rf',!isNaN(Rf)?fmtOhm(Rf):'',42,22)}
-    ${SC.w(ox+8,rfTopY-11,ox-20,rfTopY-11)}
-    ${SC.dot(ox-20,rfTopY-11)}
+    ${SC.w(ox+8,rfTopY-11,ox-22,rfTopY-11)}
+    ${SC.dot(ox-22,rfTopY-11)}
     `}
-
-    <!-- Output wire -->
-    ${SC.w(ox+50,oy,ox+70,oy)}
-    ${SC.dot(pinOut[0]+20,oy)}
-    ${SC.w(ox+70,oy,W-10,oy)}
+    <!-- Output -->
+    ${SC.wa(outX,oy,outX+22,oy,'var(--green)')}
+    ${SC.dot(outX+22,oy)}
+    ${SC.w(outX+22,oy,W-10,oy,'var(--green)')}
     ${SC.txt(W-8,oy+4,'Vout','var(--green)','end',10)}
   `);
 }
@@ -412,39 +421,28 @@ function drawTrafo(){
   const V1=parseFloat(v('trV1')),I1=parseFloat(v('trI1'));
   const n=(!isNaN(N1)&&!isNaN(N2)&&N1>0)?N2/N1:null;
   const V2=n!==null&&!isNaN(V1)?V1*n:null;
-  const I2=n!==null&&!isNaN(I1)?I1/n:null;
-  const W=260,H=150,cy=75,coreX=118,coreW=24;
-  // Coil helper: draw N arcs at given side
-  function coil(cx,startY,nArcs,dir){ // dir: 1=right arcs, -1=left arcs
-    let s=`<line x1="${cx}" y1="${startY-4}" x2="${cx}" y2="${startY}" stroke="var(--ink)" stroke-width="1.5"/>`;
-    for(let i=0;i<nArcs;i++){
-      const y=startY+i*12;
-      s+=`<path d="M${cx},${y} a6,6 0 0,${dir===1?0:1} 0,12" fill="none" stroke="var(--acc)" stroke-width="2"/>`;
-    }
-    s+=`<line x1="${cx}" y1="${startY+nArcs*12}" x2="${cx}" y2="${startY+nArcs*12+4}" stroke="var(--ink)" stroke-width="1.5"/>`;
+  const W=268,H=155,cy=72,cX=120,cW=28;
+  function coil(cx,sY,nA,dir){
+    let s=`<line x1="${cx}" y1="${sY-4}" x2="${cx}" y2="${sY}" stroke="var(--ink)" stroke-width="1.8"/>`;
+    for(let i=0;i<nA;i++){const y=sY+i*13;s+=`<path d="M${cx},${y} a6.5,6.5 0 0,${dir===1?0:1} 0,13" fill="none" stroke="var(--acc)" stroke-width="2.2" stroke-linecap="round"/>`;}
+    s+=`<line x1="${cx}" y1="${sY+nA*13}" x2="${cx}" y2="${sY+nA*13+4}" stroke="var(--ink)" stroke-width="1.8"/>`;
     return s;
   }
-  const coilArcs=4, coilStartY=cy-24, coilEndY=coilStartY+coilArcs*12;
+  const nA=4,sY=cy-26,eY=sY+nA*13;
   scRender('trSvg',W,H,`
-    <!-- Core lines -->
-    <line x1="${coreX}" y1="${coilStartY-6}" x2="${coreX}" y2="${coilEndY+6}" stroke="var(--ink)" stroke-width="2.5"/>
-    <line x1="${coreX+coreW}" y1="${coilStartY-6}" x2="${coreX+coreW}" y2="${coilEndY+6}" stroke="var(--ink)" stroke-width="2.5"/>
-    <!-- Primary coil (left) -->
-    ${coil(coreX-2,coilStartY,coilArcs,-1)}
-    <!-- Secondary coil (right) -->
-    ${coil(coreX+coreW+2,coilStartY,coilArcs,1)}
-    <!-- Primary wires -->
-    ${SC.w(coreX-2,coilStartY-4,22,coilStartY-4)}
-    ${SC.w(coreX-2,coilEndY+4,22,coilEndY+4)}
-    <!-- Secondary wires -->
-    ${SC.w(coreX+coreW+2,coilStartY-4,W-22,coilStartY-4)}
-    ${SC.w(coreX+coreW+2,coilEndY+4,W-22,coilEndY+4)}
-    <!-- Labels -->
-    ${SC.txt(22,coilStartY-14,!isNaN(N1)?'N1='+fmtNum(N1):'N1','var(--ink)','start',10)}
-    ${SC.txt(22,coilEndY+18,!isNaN(V1)?'V1='+fmtNum(V1)+' V':'V1','var(--acc)','start',10)}
-    ${SC.txt(W-22,coilStartY-14,!isNaN(N2)?'N2='+fmtNum(N2):'N2','var(--ink)','end',10)}
-    ${SC.txt(W-22,coilEndY+18,V2!==null?'V2='+fmtNum(V2)+' V':'V2','var(--green)','end',10)}
-    ${n!==null?SC.txt(W/2,H-8,'n = '+fmtNum(n),'var(--ink-3)','middle',10):''}
+    <line x1="${cX}" y1="${sY-8}" x2="${cX}" y2="${eY+8}" stroke="var(--ink)" stroke-width="3.2"/>
+    <line x1="${cX+cW}" y1="${sY-8}" x2="${cX+cW}" y2="${eY+8}" stroke="var(--ink)" stroke-width="3.2"/>
+    ${coil(cX-2,sY,nA,-1)}
+    ${coil(cX+cW+2,sY,nA,1)}
+    ${SC.w(cX-2,sY-4,22,sY-4)}
+    ${SC.w(cX-2,eY+4,22,eY+4)}
+    ${SC.w(cX+cW+2,sY-4,W-22,sY-4)}
+    ${SC.w(cX+cW+2,eY+4,W-22,eY+4)}
+    ${SC.txt(22,sY-14,!isNaN(N1)?'N1='+fmtNum(N1):'N1','var(--ink)','start',10)}
+    ${!isNaN(V1)?SC.badge(22,eY+18,fmtNum(V1)+' V','var(--acc)','var(--acc-soft)','start'):SC.txt(22,eY+18,'V1','var(--ink-3)','start',10)}
+    ${SC.txt(W-22,sY-14,!isNaN(N2)?'N2='+fmtNum(N2):'N2','var(--ink)','end',10)}
+    ${V2!==null?SC.badge(W-22,eY+18,fmtNum(V2)+' V','var(--green)','var(--green-soft)','end'):SC.txt(W-22,eY+18,'V2','var(--ink-3)','end',10)}
+    ${n!==null?SC.badge(W/2,H-8,'n = '+fmtNum(n),'var(--ink-3)','var(--surface)'):SC.txt(W/2,H-8,'n = N2/N1','var(--ink-3)')}
   `);
 }
 
@@ -457,31 +455,32 @@ function drawPf(){
   else if(!isNaN(P)&&!isNaN(Q)){pp=P;qq=Q;ss=Math.sqrt(P*P+Q*Q);cosphi=ss>0?P/ss:1;}
   else if(!isNaN(P)&&!isNaN(S)&&S>=P){pp=P;ss=S;qq=Math.sqrt(Math.max(0,S*S-P*P));cosphi=P/S;}
   else if(!isNaN(Q)&&!isNaN(S)){qq=Q;ss=S;pp=Math.sqrt(Math.max(0,S*S-Q*Q));cosphi=ss>0?pp/ss:0;}
-  const W=220,H=160,ox=30,oy=130;
-  const scale=pp&&ss?Math.min(130/ss,100/Math.max(qq,1)):60;
-  const px=(pp||60)*scale, qy=(qq||40)*scale;
-  const sx=px,sy=oy-qy;
+  const W=232,H=168,ox=34,oy=134;
+  const scale=pp&&ss?Math.min(130/ss,95/Math.max(qq,1)):60;
+  const px=Math.min((pp||60)*scale,155),qy=Math.min((qq||40)*scale,108);
   const phi=cosphi?Math.acos(Math.min(1,Math.max(-1,cosphi)))*180/Math.PI:null;
+  const ex=ox+px,ey=oy-qy;
   scRender('pfSvg',W,H,`
-    <!-- P axis (horizontal) -->
-    ${SC.w(ox,oy,ox+px,oy,'var(--acc)')}
-    <polygon points="${ox+px+2},${oy-4} ${ox+px+10},${oy} ${ox+px+2},${oy+4}" fill="var(--acc)"/>
-    ${SC.txt(ox+px/2,oy+14,'P (W)','var(--acc)','middle',10)}
-    ${pp?SC.mono(ox+px/2,oy+24,fmtNum(pp)+' W','var(--acc)','middle',9):''}
-    <!-- Q axis (vertical) -->
-    ${SC.w(ox,oy,ox,oy-qy,'var(--red)')}
-    <polygon points="${ox-4},${oy-qy-2} ${ox},${oy-qy-10} ${ox+4},${oy-qy-2}" fill="var(--red)"/>
-    ${SC.txt(ox-8,oy-qy/2,'Q','var(--red)','middle',10)}
-    ${qq?SC.mono(ox-8,oy-qy/2+12,fmtNum(qq),'var(--red)','middle',9):''}
+    ${pp&&qq?`<polygon points="${ox},${oy} ${ex},${oy} ${ex},${ey}" fill="var(--acc-soft)" opacity="0.65"/>`:''}
+    <!-- P axis -->
+    ${SC.w(ox,oy,ex,oy,'var(--acc)')}
+    <polygon points="${ex+2},${oy-4} ${ex+10},${oy} ${ex+2},${oy+4}" fill="var(--acc)"/>
+    ${SC.txt(ox+px/2,oy+15,'P (W)','var(--acc)','middle',10)}
+    ${pp?SC.badge(ox+px/2,oy+28,fmtNum(pp)+' W','var(--acc)','var(--acc-soft)'):SC.txt(ox+px/2,oy+28,'P','var(--ink-3)')}
+    <!-- Q axis -->
+    ${SC.w(ox,oy,ox,ey,'var(--red)')}
+    <polygon points="${ox-4},${ey-2} ${ox},${ey-10} ${ox+4},${ey-2}" fill="var(--red)"/>
+    ${SC.txt(ox-14,oy-qy/2,'Q','var(--red)','middle',10)}
+    ${qq?SC.badge(ox-14,oy-qy/2+14,fmtNum(qq),'var(--red)','var(--red-soft)'):SC.txt(ox-14,oy-qy/2+14,'Q','var(--ink-3)')}
     <!-- S hypotenuse -->
-    ${SC.w(ox,oy,ox+px,oy-qy,'var(--green)')}
-    ${SC.txt(ox+px/2+10,oy-qy/2-8,'S','var(--green)','middle',10)}
-    ${ss?SC.mono(ox+px/2+10,oy-qy/2+4,fmtNum(ss)+' VA','var(--green)','middle',9):''}
+    ${SC.w(ox,oy,ex,ey,'var(--green)')}
+    ${SC.txt(ox+px/2+14,oy-qy/2-8,'S','var(--green)','middle',10)}
+    ${ss?SC.badge(ox+px/2+14,oy-qy/2+6,fmtNum(ss)+' VA','var(--green)','var(--green-soft)'):SC.txt(ox+px/2+14,oy-qy/2+6,'S','var(--ink-3)')}
     <!-- phi arc -->
-    ${phi!==null?`<path d="M${ox+28},${oy} A28,28 0 0,0 ${ox+28*Math.cos(phi*Math.PI/180)},${oy-28*Math.sin(phi*Math.PI/180)}" fill="none" stroke="var(--spark)" stroke-width="1.2" stroke-dasharray="3,2"/>
-    ${SC.txt(ox+36,oy-12,'φ='+fmtNum(phi)+'°','var(--spark)','start',9)}`:''}
-    <!-- right angle marker -->
-    <polyline points="${ox+10},${oy} ${ox+10},${oy-10} ${ox},${oy-10}" fill="none" stroke="var(--line-2)" stroke-width="1"/>
+    ${phi!==null?`<path d="M${ox+30},${oy} A30,30 0 0,0 ${ox+30*Math.cos(phi*Math.PI/180)},${oy-30*Math.sin(phi*Math.PI/180)}" fill="none" stroke="var(--spark)" stroke-width="1.5" stroke-dasharray="4,2"/>
+    ${SC.txt(ox+44,oy-14,'φ='+fmtNum(phi)+'°','var(--spark)','start',9)}`:''}
+    <!-- right angle -->
+    <polyline points="${ox+12},${oy} ${ox+12},${oy-12} ${ox},${oy-12}" fill="none" stroke="var(--line-2)" stroke-width="1.2"/>
   `);
 }
 
@@ -492,31 +491,49 @@ function drawKirch(){
   const vv2=isNaN(V2)?0:V2;
   const g1=R1>0?1/R1:0,g2=R2>0?1/R2:0,g3=R3>0?1/R3:0;
   const Va=(g1+g2+g3>0)?(V1*g1+vv2*g2)/(g1+g2+g3):null;
-  const W=260,H=185,nx=130,ny=88; // node A position
+  // Symmetric layout: V1─R1─NodeA─R2─V2  (horizontal); R3 down to GND rail
+  const W=288,H=158,naX=144,naY=54,gndY=134;
+  const v1X=28,vr=17,v2X=260,r1cX=84,r2cX=204;
   scRender('kcSvg',W,H,`
-    <!-- V1 source (top-left) -->
-    ${SC.vs(28,40,!isNaN(V1)?fmtNum(V1)+' V':'V1')}
-    ${SC.w(28,24,28,10)}${SC.w(28,10,nx,10)}${SC.w(nx,10,nx,ny-12)}
-    ${SC.w(28,56,28,ny)}${SC.w(28,ny,78,ny)}
-    ${SC.res(100,ny,'R1',!isNaN(R1)?fmtOhm(R1):'')}
-    ${SC.w(121,ny,nx,ny)}
-
-    <!-- V2 source (bottom-left), optional -->
-    ${SC.vs(28,135,vv2!==0||!isNaN(V2)?fmtNum(vv2)+' V':'V2(0)')}
-    ${SC.w(28,119,28,ny)}${SC.dot(28,ny)}
-    ${SC.w(28,151,28,165)}${SC.w(28,165,nx,165)}${SC.w(nx,165,nx,ny+12)}
-    <!-- R2 on second branch but going from left to node ... hmm, I need to route this differently -->
+    <!-- V1 source: horizontal circle, + on right side -->
+    <circle cx="${v1X}" cy="${naY}" r="${vr}" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.8" filter="url(#scSh)"/>
+    <circle cx="${v1X}" cy="${naY}" r="12" fill="none" stroke="var(--line-2)" stroke-width="0.8"/>
+    <text x="${v1X+4}" y="${naY+4}" text-anchor="start" font-size="11" fill="var(--green)" font-weight="700">+</text>
+    <text x="${v1X-4}" y="${naY+4}" text-anchor="end" font-size="11" fill="var(--red)" font-weight="700">−</text>
+    ${!isNaN(V1)?SC.badge(v1X,naY-vr-10,fmtNum(V1)+' V','var(--acc)','var(--acc-soft)'):SC.txt(v1X,naY-vr-8,'V1','var(--ink-3)')}
+    ${SC.txt(v1X,naY+vr+12,'V1','var(--ink-3)')}
+    <!-- V1(+) → R1 → Node A -->
+    ${SC.w(v1X+vr,naY,r1cX-22,naY)}
+    ${SC.res(r1cX,naY,'R1',!isNaN(R1)?fmtOhm(R1):'')}
+    ${SC.w(r1cX+22,naY,naX,naY)}
+    <!-- V1(−) → left GND bus -->
+    ${SC.w(v1X-vr,naY,10,naY)}${SC.w(10,naY,10,gndY)}${SC.w(10,gndY,naX,gndY)}
 
     <!-- Node A -->
-    ${SC.dot(nx,ny,'var(--acc)')}
-    ${Va!==null?SC.txt(nx+10,ny-8,fmtNum(Va)+' V','var(--acc)','start',11):''}
-    ${SC.txt(nx+10,ny+4,'A','var(--ink-3)','start',9)}
+    ${SC.dot(naX,naY,'var(--acc)')}
+    ${Va!==null?SC.badge(naX,naY-14,fmtNum(Va)+' V','var(--green)','var(--green-soft)'):SC.txt(naX,naY-14,'Va','var(--ink-3)')}
+    ${SC.txt(naX+6,naY+12,'A','var(--ink-3)','start',9)}
 
-    <!-- R3 to GND -->
-    ${SC.w(nx,ny+12,nx,ny+40)}
-    ${SC.res(nx,ny+54,'R3',!isNaN(R3)?fmtOhm(R3):'')}
-    ${SC.w(nx,ny+65,nx,ny+88)}
-    ${SC.gnd(nx,ny+90)}
+    <!-- R3 → GND -->
+    ${SC.wa(naX,naY+5,naX,naY+30,'var(--acc)')}
+    ${SC.res(naX,naY+44,'R3',!isNaN(R3)?fmtOhm(R3):'')}
+    ${SC.w(naX,naY+55,naX,gndY)}
+    ${SC.dot(naX,gndY)}
+    ${SC.gnd(naX,gndY+2)}
+
+    <!-- V2 source: horizontal circle, + on left side -->
+    <circle cx="${v2X}" cy="${naY}" r="${vr}" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.8" filter="url(#scSh)"/>
+    <circle cx="${v2X}" cy="${naY}" r="12" fill="none" stroke="var(--line-2)" stroke-width="0.8"/>
+    <text x="${v2X-4}" y="${naY+4}" text-anchor="end" font-size="11" fill="var(--green)" font-weight="700">+</text>
+    <text x="${v2X+4}" y="${naY+4}" text-anchor="start" font-size="11" fill="var(--red)" font-weight="700">−</text>
+    ${SC.badge(v2X,naY-vr-10,fmtNum(vv2)+' V','var(--acc)','var(--acc-soft)')}
+    ${SC.txt(v2X,naY+vr+12,'V2','var(--ink-3)')}
+    <!-- V2(+) ← R2 ← Node A -->
+    ${SC.w(v2X-vr,naY,r2cX+22,naY)}
+    ${SC.res(r2cX,naY,'R2',!isNaN(R2)?fmtOhm(R2):'')}
+    ${SC.w(r2cX-22,naY,naX,naY)}
+    <!-- V2(−) → right GND bus -->
+    ${SC.w(v2X+vr,naY,W-10,naY)}${SC.w(W-10,naY,W-10,gndY)}${SC.w(W-10,gndY,naX,gndY)}
   `);
 }
 
